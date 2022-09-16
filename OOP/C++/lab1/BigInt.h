@@ -8,20 +8,27 @@ using namespace std;
 
 class BigInt{
 private:
-    vector<int> num;
-    vector<int> zeroCount;
+    vector<int> data;
     bool sign;
 public:
     BigInt();
     BigInt(int);
     BigInt(string);
-    ~BigInt();
 
     BigInt& operator=(const BigInt&);
-
+    BigInt& operator++();
+    BigInt operator++(int);
+    BigInt& operator--();
+    BigInt operator--(int);
     BigInt operator~() const;
 
-    BigInt& operator++();
+    bool operator==(const BigInt&) const;
+    bool operator!=(const BigInt&) const;
+    bool operator<(const BigInt&) const;
+    bool operator>(const BigInt&) const;
+    bool operator<=(const BigInt&) const;
+    bool operator>=(const BigInt&) const;
+
     void Print();
 };
 
