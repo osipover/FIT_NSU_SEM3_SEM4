@@ -4,8 +4,8 @@
 using namespace std;
 
 typedef struct TStream{
-    ifstream input;
-    ofstream output;
+	ifstream input;
+	ofstream output;
 }TStream;
 
 TStream* OpenStream(const string& inputFile, const string& outputFile);
@@ -22,8 +22,8 @@ public:
 	void AddWord(const string& word);
 	void Output(ofstream& output);
 	void Sort();
-    ~WordTable();
+    	~WordTable();
 private:
-    list<TWord*> table;
-    int countWords;
+    	list<TWord*> table;
+	int countWords;
 };
