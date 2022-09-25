@@ -1,12 +1,12 @@
-#include <fstream>
-#include "WordList.h"
+#include <windows.h>
+#include "WordTable.h"
 using namespace std;
 
 int main() {
-    ifstream file;
-    file.open("file.txt");
-    WordList wordList(file);
-    wordList.Sort();
-    wordList.Print();
-    file.close();
+    SetConsoleOutputCP(CP_UTF8);
+    TStream* stream = OpenStream("input.txt", "output.csv");
+    WordTable wordTable(stream->input);
+    wordTable.Sort();
+    wordTable.Output(stream->output);
+    CloseStream(stream);
 }
