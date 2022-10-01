@@ -1,29 +1,25 @@
-#include <list>
+#include <map>
 #include <fstream>
 #include <string>
 using namespace std;
 
-typedef struct TStream{
-	ifstream input;
-	ofstream output;
-}TStream;
-
-TStream* OpenStream(const string& inputFile, const string& outputFile);
-void CloseStream(TStream* stream);
-
-typedef struct TWord {
-	string word;
-	int count;
-} TWord;
+class Output;
 
 class WordTable {
 public:
-	WordTable(ifstream& input);
-	void AddWord(const string& word);
-	void Output(ofstream& output);
-	void Sort();
-    	~WordTable();
+    explicit WordTable(const string& fileName);
+    void AddWord(const string& word);
+    friend class Output;
 private:
-    	list<TWord*> table;
-	int countWords;
+    map<string,int> table;
+    multimap<int, string> sortedTable;
+    int countWords;
+};
+
+class Output {
+public:
+    explicit Output(const string &fileName);
+    void OutputData(const WordTable& wordTable);
+private:
+    ofstream stream;
 };
