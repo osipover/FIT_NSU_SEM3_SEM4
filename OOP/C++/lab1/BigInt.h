@@ -9,8 +9,8 @@ using namespace std;
 class BigInt{
 public:
     BigInt();
-    BigInt(int);
-    BigInt(string);
+    explicit BigInt(int);
+    explicit BigInt(string);
 
     BigInt operator+() const;
     BigInt operator-() const;
@@ -35,7 +35,7 @@ public:
     friend BigInt operator+(BigInt left, const BigInt& right);
     friend BigInt operator-(BigInt left, const BigInt& right);
 
-    void Print();
+    friend ostream& operator<<(ostream&, const BigInt&);
 private:
     const int base = 1000000000;
     vector<int> data;
@@ -44,5 +44,5 @@ private:
 
 BigInt operator+(BigInt left, const BigInt& right);
 BigInt operator-(BigInt left, const BigInt& right);
-
+ostream& operator<<(ostream&, const BigInt&);
 #endif //LAB1_BIGINT_H
