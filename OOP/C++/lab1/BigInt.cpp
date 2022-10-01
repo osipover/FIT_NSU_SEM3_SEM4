@@ -9,15 +9,15 @@ vector<int> CreateVector(string BigIntInStr){
     int newItem = 0, digits = 1, pow = 1;
     for (int i = BigIntInStr.length() - 1; i >= 0; --i){
         if (BigIntInStr[i] != '-')
-            newItem = pow*(BigIntInStr[i] - '0') + newItem;
-        if ((digits == 9) || (i == 0)){
+            newItem = pow * (BigIntInStr[i] - '0') + newItem;
+        if ((digits == 9) || ((i == 0) && (BigIntInStr[i] != '-'))) {
             BigInt.push_back(newItem);
             newItem = 0;
-            digits = 0;
+            digits = 1;
             pow = 1;
         }
         else{
-            pow*=10;
+            pow *= 10;
             ++digits;
         }
     }
@@ -39,7 +39,7 @@ void PrintZeros(int countOfZeros){
 }
 
 void BigInt::Print(){
-    if (sign == true)
+    if (sign)
         cout << '-';
     for (int i = data.size()-1; i >= 0; --i){
         int countOfZeros = CalcCountOfZeros(data.at(i));
@@ -55,16 +55,23 @@ BigInt:: BigInt(){
     data.push_back(0);
 }
 
-
 BigInt::BigInt(int input){
     sign = (input < 0);
     input = abs(input);
     data.push_back(input);
 }
 
+void DeleteInvalidZeros(vector<int> &data) {
+    if (data.size()==1) return;
+    for (int i = data.size()-1; i >= 1; --i){
+        if (data[i] == 0) data.pop_back();
+    }
+}
+
 BigInt::BigInt(string input) {
     sign = (input[0] == '-');
     data = CreateVector(input);
+    DeleteInvalidZeros(data);
 }
 
 BigInt& BigInt::operator=(const BigInt &second) {
@@ -74,74 +81,18 @@ BigInt& BigInt::operator=(const BigInt &second) {
 }
 
 bool IsOverflow(int BigIntItem){
-    return (BigIntItem == 1000000000);
+    return (BigIntItem >= 1000000000);
 }
 
 BigInt& BigInt::operator++() {
-    if (!sign){
-        for (int i = 0; i < data.size(); ++i){
-            data.at(i)++;
-            if (IsOverflow(data.at(i))){
-                data.at(i) = 0;
-                if (i == data.size()-1){
-                    data.push_back(1);
-                    break;
-                }
-            }
-            else
-                break;
-        }
-    }
-    else {
-        for (int i = 0; i < data.size(); ++i){
-            if (data.at(i) == 0){
-                data.at(i) = 999999999;
-            }
-            else{
-                data.at(i)--;
-                break;
-            }
-        }
-        if ((data.at(data.size()-1) == 0) && (data.size() > 1))
-            data.pop_back();
-        if ((data.at(0) == 0) && (data.size() == 1))
-            sign = false;
-    }
+    BigInt inc(1);
+    *this += inc;
     return *this;
 }
 
 BigInt& BigInt::operator--(){
-    if (!sign){
-        for (int i = 0; i < data.size(); ++i){
-            if ((data.at(i) == 0) && (data.size() == 1)){
-                data.at(i) = 1;
-                sign = true;
-            }
-            else if ((data.at(i) == 0) && (data.size() > 1)){
-                data.at(i) = 999999999;
-            }
-            else{
-                data.at(i)--;
-                break;
-            }
-        }
-        if ((data.at(data.size()-1) == 0) && (data.size() > 1))
-            data.pop_back();
-    }
-    else {
-        for (int i = 0; i < data.size(); ++i){
-            data.at(i)++;
-            if (IsOverflow(data.at(i))){
-                data.at(i) = 0;
-                if (i == data.size()-1){
-                    data.push_back(1);
-                    break;
-                }
-            }
-            else
-                break;
-        }
-    }
+    BigInt dec(1);
+    *this -= dec;
     return *this;
 }
 
@@ -170,7 +121,9 @@ BigInt BigInt::operator~() const {
     return negation;
 }
 
-bool BigInt::operator==(const BigInt& second) const {
+
+
+bool BigInt::operator==(const BigInt &second) const {
     if (this->sign != second.sign)
         return false;
     if (data.size() != second.data.size())
@@ -235,3 +188,56 @@ bool BigInt::operator>=(const BigInt& second) const {
     return (*this > second) || (*this == second);
 }
 
+BigInt BigInt::operator+() const {
+    BigInt copy = *this;
+    return copy;
+}
+
+BigInt BigInt::operator-() const {
+    BigInt copy = *this;
+    copy.sign = !copy.sign;
+    return copy;
+}
+
+BigInt& BigInt::operator+=(const BigInt &right ){
+    *this = *this + right;
+    return *this;
+}
+
+BigInt& BigInt::operator-=(const BigInt &right){
+    *this = *this - right;
+    return *this;
+}
+
+BigInt operator+(BigInt left, const BigInt& right) {
+    if (left.sign == right.sign){
+        int shiftOne = 1;
+        for (int i = 0; i < right.data.size(); ++i){
+            left.data.at(i) += right.data.at(i);
+            if (left.data.at(i) >= left.base){
+                left.data.at(i) %= 1000000000;
+                if (i == left.data.size() - 1) left.data.push_back(shiftOne);
+                else left.data.at(i+1) += shiftOne;
+            }
+        }
+        return left;
+    }
+    else if (left.sign) return right - (-left);
+    else return left - (-right);
+}
+
+BigInt operator-(BigInt left, const BigInt& right) {
+    if (right.sign) return left + (-right);
+    else if (left.sign) return -(-left + right);
+    else if (left < right) return -(right - left);
+    int take = 0;
+    for (int i = 0; i < right.data.size() || take != 0; ++i){
+        left.data.at(i) -= take + (i != right.data.size() ? right.data.at(i) : 0);
+        if (left.data.at(i) < 0) {
+            left.data.at(i) += left.base;
+            take = 1;
+        }
+        else take = 0;
+    }
+    return left;
+}
