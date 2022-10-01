@@ -1,12 +1,11 @@
 #include <windows.h>
-#include "WordTable.h"
+#include "interface.h"
 using namespace std;
 
 int main() {
     SetConsoleOutputCP(CP_UTF8);
-    TStream* stream = OpenStream("input.txt", "output.csv");
-    WordTable wordTable(stream->input);
-    wordTable.Sort();
-    wordTable.Output(stream->output);
-    CloseStream(stream);
+    WordTable wordTable("input.txt");
+    Output output("output.csv");
+    output.OutputData(wordTable);
+    return 0;
 }
