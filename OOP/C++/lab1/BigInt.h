@@ -7,13 +7,13 @@
 using namespace std;
 
 class BigInt{
-private:
-    vector<int> data;
-    bool sign;
 public:
     BigInt();
     BigInt(int);
     BigInt(string);
+
+    BigInt operator+() const;
+    BigInt operator-() const;
 
     BigInt& operator=(const BigInt&);
     BigInt& operator++();
@@ -22,6 +22,9 @@ public:
     BigInt operator--(int);
     BigInt operator~() const;
 
+    BigInt& operator+=(const BigInt&);
+    BigInt& operator-=(const BigInt&);
+
     bool operator==(const BigInt&) const;
     bool operator!=(const BigInt&) const;
     bool operator<(const BigInt&) const;
@@ -29,7 +32,17 @@ public:
     bool operator<=(const BigInt&) const;
     bool operator>=(const BigInt&) const;
 
+    friend BigInt operator+(BigInt left, const BigInt& right);
+    friend BigInt operator-(BigInt left, const BigInt& right);
+
     void Print();
+private:
+    const int base = 1000000000;
+    vector<int> data;
+    bool sign;
 };
+
+BigInt operator+(BigInt left, const BigInt& right);
+BigInt operator-(BigInt left, const BigInt& right);
 
 #endif //LAB1_BIGINT_H
