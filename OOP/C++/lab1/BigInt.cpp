@@ -33,22 +33,12 @@ int CalcCountOfZeros(int n){
     return 9 - length;
 }
 
-void PrintZeros(int countOfZeros){
+void PrintZeros(ostream& stream, int countOfZeros){
     for (int i = 1; i <= countOfZeros; ++i)
-        cout << 0;
+        stream << 0;
 }
 
-void BigInt::Print(){
-    if (sign)
-        cout << '-';
-    for (int i = data.size()-1; i >= 0; --i){
-        int countOfZeros = CalcCountOfZeros(data.at(i));
-        if (i != data.size()-1)
-            PrintZeros(countOfZeros);
-        cout << data.at(i);
-    }
-    cout << endl;
-}
+
 
 BigInt:: BigInt(){
     sign = false;
@@ -121,8 +111,6 @@ BigInt BigInt::operator~() const {
     return negation;
 }
 
-
-
 bool BigInt::operator==(const BigInt &second) const {
     if (this->sign != second.sign)
         return false;
@@ -140,37 +128,24 @@ bool BigInt::operator!=(const BigInt& second) const {
 }
 
 bool BigInt::operator<(const BigInt& second) const {
-    if (*this == second)
-        return false;
-
-    if (this->sign && !second.sign)
-        return true;
-    if (!(this->sign) && second.sign)
-        return false;
-
+    if (*this == second) return false;
+    if (this->sign && !second.sign) return true;
+    if (!(this->sign) && second.sign) return false;
     if (!sign){
-        if (this->data.size() < second.data.size())
-            return true;
-        if (this->data.size() > second.data.size())
-            return false;
+        if (this->data.size() < second.data.size()) return true;
+        if (this->data.size() > second.data.size()) return false;
         for (int i = data.size()-1; i >= 0; --i){
-            if (this->data.at(i) < second.data.at(i))
-                return true;
-            if (this->data.at(i) > second.data.at(i))
-                return false;
+            if (this->data.at(i) < second.data.at(i)) return true;
+            if (this->data.at(i) > second.data.at(i)) return false;
         }
         return false;
     }
     else {
-        if (this->data.size() > second.data.size())
-            return true;
-        if (this->data.size() < second.data.size())
-            return false;
+        if (this->data.size() > second.data.size()) return true;
+        if (this->data.size() < second.data.size()) return false;
         for (int i = data.size()-1; i >= 0; --i){
-            if (this->data.at(i) > second.data.at(i))
-                return true;
-            if (this->data.at(i) < second.data.at(i))
-                return false;
+            if (this->data.at(i) > second.data.at(i)) return true;
+            if (this->data.at(i) < second.data.at(i)) return false;
         }
         return false;
     }
@@ -240,4 +215,16 @@ BigInt operator-(BigInt left, const BigInt& right) {
         else take = 0;
     }
     return left;
+}
+
+ostream& operator<<(ostream& stream, const BigInt& item){
+    if (item.sign)
+        stream << '-';
+    for (int i = item.data.size()-1; i >= 0; --i){
+        int countOfZeros = CalcCountOfZeros(item.data.at(i));
+        if (i != item.data.size()-1)
+            PrintZeros(stream, countOfZeros);
+        stream << item.data.at(i);
+    }
+    return stream;
 }
