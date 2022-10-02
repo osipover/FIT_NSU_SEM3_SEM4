@@ -34,6 +34,13 @@ public:
 
     friend BigInt operator+(BigInt left, const BigInt& right);
     friend BigInt operator-(BigInt left, const BigInt& right);
+    friend BigInt operator*(const BigInt& left, const BigInt& right);
+    //friend BigInt operator/(const BigInt& left, const BigInt& right);
+
+    explicit operator int() const;
+    explicit operator string() const;
+
+    size_t size() const;
 
     friend ostream& operator<<(ostream&, const BigInt&);
 private:
@@ -44,5 +51,8 @@ private:
 
 BigInt operator+(BigInt left, const BigInt& right);
 BigInt operator-(BigInt left, const BigInt& right);
+BigInt operator*(const BigInt& left, const BigInt& right);
+//BigInt operator/(const BigInt& left, const BigInt& right);
+
 ostream& operator<<(ostream&, const BigInt&);
 #endif //LAB1_BIGINT_H
