@@ -4,6 +4,17 @@
 #include "BigInt.h"
 using namespace std;
 
+BigInt:: BigInt(){
+    sign = false;
+    data.push_back(0);
+}
+
+BigInt::BigInt(int input){
+    sign = (input < 0);
+    input = abs(input);
+    data.push_back(input);
+}
+
 vector<int> CreateVector(string BigIntInStr){
     vector<int> BigInt;
     int newItem = 0, digits = 1, pow = 1;
@@ -24,33 +35,6 @@ vector<int> CreateVector(string BigIntInStr){
     return BigInt;
 }
 
-int CalcCountOfZeros(int n){
-    int length = 0;
-    while(n > 0){
-        ++length;
-        n /= 10;
-    }
-    return 9 - length;
-}
-
-void PrintZeros(ostream& stream, int countOfZeros){
-    for (int i = 1; i <= countOfZeros; ++i)
-        stream << 0;
-}
-
-
-
-BigInt:: BigInt(){
-    sign = false;
-    data.push_back(0);
-}
-
-BigInt::BigInt(int input){
-    sign = (input < 0);
-    input = abs(input);
-    data.push_back(input);
-}
-
 void DeleteInvalidZeros(vector<int> &data) {
     if (data.size()==1) return;
     for (int i = data.size()-1; i >= 1; --i){
@@ -68,10 +52,6 @@ BigInt& BigInt::operator=(const BigInt &second) {
     data = second.data;
     sign = second.sign;
     return *this;
-}
-
-bool IsOverflow(int BigIntItem){
-    return (BigIntItem >= 1000000000);
 }
 
 BigInt& BigInt::operator++() {
@@ -117,7 +97,7 @@ bool BigInt::operator==(const BigInt &second) const {
     if (data.size() != second.data.size())
         return false;
     for (int i = data.size()-1; i >= 0; --i){
-        if (this->data.at(i) != second.data.at(i))
+        if (this->data[i] != second.data.at(i))
             return false;
     }
     return true;
@@ -135,8 +115,8 @@ bool BigInt::operator<(const BigInt& second) const {
         if (this->data.size() < second.data.size()) return true;
         if (this->data.size() > second.data.size()) return false;
         for (int i = data.size()-1; i >= 0; --i){
-            if (this->data.at(i) < second.data.at(i)) return true;
-            if (this->data.at(i) > second.data.at(i)) return false;
+            if (this->data[i] < second.data[i]) return true;
+            if (this->data[i] > second.data[i]) return false;
         }
         return false;
     }
@@ -144,8 +124,8 @@ bool BigInt::operator<(const BigInt& second) const {
         if (this->data.size() > second.data.size()) return true;
         if (this->data.size() < second.data.size()) return false;
         for (int i = data.size()-1; i >= 0; --i){
-            if (this->data.at(i) > second.data.at(i)) return true;
-            if (this->data.at(i) < second.data.at(i)) return false;
+            if (this->data[i] > second.data[i]) return true;
+            if (this->data[i] < second.data[i]) return false;
         }
         return false;
     }
@@ -188,11 +168,11 @@ BigInt operator+(BigInt left, const BigInt& right) {
     if (left.sign == right.sign){
         int shiftOne = 1;
         for (int i = 0; i < right.data.size(); ++i){
-            left.data.at(i) += right.data.at(i);
-            if (left.data.at(i) >= left.base){
-                left.data.at(i) %= 1000000000;
+            left.data[i] += right.data[i];
+            if (left.data[i] >= left.base){
+                left.data[i] %= 1000000000;
                 if (i == left.data.size() - 1) left.data.push_back(shiftOne);
-                else left.data.at(i+1) += shiftOne;
+                else left.data[i+1] += shiftOne;
             }
         }
         return left;
@@ -207,9 +187,9 @@ BigInt operator-(BigInt left, const BigInt& right) {
     else if (left < right) return -(right - left);
     int take = 0;
     for (int i = 0; i < right.data.size() || take != 0; ++i){
-        left.data.at(i) -= take + (i != right.data.size() ? right.data.at(i) : 0);
-        if (left.data.at(i) < 0) {
-            left.data.at(i) += left.base;
+        left.data[i] -= take + (i != right.data.size() ? right.data[i] : 0);
+        if (left.data[i] < 0) {
+            left.data[i] += left.base;
             take = 1;
         }
         else take = 0;
@@ -217,14 +197,107 @@ BigInt operator-(BigInt left, const BigInt& right) {
     return left;
 }
 
+BigInt operator*(const BigInt& left, const BigInt& right){
+    BigInt result;
+    result.data.resize(left.data.size() + right.data.size());
+    for (int i = 0; i < right.data.size(); ++i){
+        int carry = 0;
+        for (int j = 0; j < left.data.size() || carry != 0; ++j){
+            long long int cur = result.data[i + j] + 1LL * right.data[i] * (j < left.data.size() ? left. data[j] : 0) + carry;
+            result.data[i+j] += static_cast<int>(cur % result.base);
+            carry = static_cast<int>(cur / result.base);
+
+        }
+    }
+    DeleteInvalidZeros(result.data);
+    result.sign = (left.sign != right.sign);
+    return result;
+}
+
+void ShiftRight(vector<int> &shift){
+    if (shift.empty()){
+        shift.push_back(0);
+        return;
+    }
+    shift.push_back(shift[shift.size()-1]);
+    for (auto i = shift.size() - 2; i > 0; --i){
+        shift[i] = shift[i - 1];
+    }
+    shift[0] = 0;
+}
+/*
+int FindDigitQuot(const BigInt& divider){
+    int digitQuot = 0, left = 0, right = 1000000000;
+    while (left <= right){
+        BigInt middle((left + right)/2);
+
+
+    }
+    return digitQuot;
+}
+
+BigInt operator/(const BigInt& left, const BigInt& right){
+    BigInt shift, result;
+    result.data.resize(left.data.size());
+    for (auto i = left.data.size() - 1; i >= 0; --i){
+        ShiftRight(shift.data);
+        shift.data[0] = left.data[i];
+        //int digitQuot = FindDigitOfQuot();
+    }
+}*/
+
+int CalcCountOfZeros(int n){
+    int length = 0;
+    while(n > 0){
+        ++length;
+        n /= 10;
+    }
+    return 9 - length;
+}
+
+void PrintZeros(ostream& stream, int countOfZeros){
+    for (int i = 1; i <= countOfZeros; ++i)
+        stream << 0;
+}
+
+BigInt::operator int() const {
+    return this->data[0];
+}
+
+string ConvertIntToStr(int item){
+    string strInt = "";
+    while (item > 0){
+        strInt = (char)((item % 10) + '0') + strInt;
+        item /= 10;
+    }
+    return strInt;
+}
+
+string ConvertBigIntToStr(const vector<int> &data){
+    string strBigInt = "";
+    for (int i = data.size() - 1; i >= 0; --i){
+        strBigInt += ConvertIntToStr(data[i]);
+    }
+    return strBigInt;
+}
+
+BigInt::operator string() const{
+    string strBigInt = ConvertBigIntToStr(this->data);
+    return strBigInt;
+}
+
+size_t BigInt::size() const{
+    return this->data.size()*sizeof(int);
+}
+
 ostream& operator<<(ostream& stream, const BigInt& item){
     if (item.sign)
         stream << '-';
     for (int i = item.data.size()-1; i >= 0; --i){
-        int countOfZeros = CalcCountOfZeros(item.data.at(i));
+        int countOfZeros = CalcCountOfZeros(item.data[i]);
         if (i != item.data.size()-1)
             PrintZeros(stream, countOfZeros);
-        stream << item.data.at(i);
+        stream << item.data[i];
     }
     return stream;
 }
