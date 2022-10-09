@@ -1,14 +1,11 @@
 #include <iostream>
 #include "BigInt.h"
+
 using namespace std;
 
 int main() {
-    BigInt a("-123");
-    BigInt b = a--;
-    b.Print();
-    a.Print();
-
+    BigInt a("111111111123145"), b("1111111111121");
+    BigInt c = a & b;
+    cout << c;
     return 0;
 }
-
-
