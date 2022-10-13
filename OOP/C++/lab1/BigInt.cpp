@@ -1,28 +1,42 @@
 #include <iostream>
 #include <string>
-#include <cmath>
 #include "BigInt.h"
 using namespace std;
+
+int abs(int input){
+    if (input == INT_MIN) ++input;
+    return (input < 0) ? input * (-1) : input;
+}
 
 BigInt:: BigInt(){
     sign = false;
     data.push_back(0);
 }
 
-BigInt::BigInt(int input){
-    sign = (input < 0);
-    input = abs(input);
-    data.push_back(input);
+vector<int> createVector(long long int newValue){
+    vector<int> data;
+    do{
+        data.push_back(newValue % BASE);
+        newValue /= BASE;
+    }
+    while (newValue > 0);
+    return data;
 }
 
-vector<int> CreateVector(string BigIntInStr){
-    vector<int> BigInt;
+BigInt::BigInt(int input){
+    auto newValue = static_cast<long long int>(input);
+    sign = (newValue < 0);
+    data = createVector(abs(newValue));
+}
+
+vector<int> createVector(string strBigInt){
+    vector<int> data;
     int newItem = 0, digits = 1, pow = 1;
-    for (int i = BigIntInStr.length() - 1; i >= 0; --i){
-        if (BigIntInStr[i] != '-')
-            newItem = pow * (BigIntInStr[i] - '0') + newItem;
+    for (int i = strBigInt.length() - 1; i >= 0; --i){
+        if (strBigInt[i] != '-')
+            newItem = pow * (strBigInt[i] - '0') + newItem;
         if ((digits == 9) || (i == 0)) {
-            BigInt.push_back(newItem);
+            data.push_back(newItem);
             newItem = 0;
             digits = 1;
             pow = 1;
@@ -32,10 +46,10 @@ vector<int> CreateVector(string BigIntInStr){
             ++digits;
         }
     }
-    return BigInt;
+    return data;
 }
 
-void DeleteInvalidZeros(vector<int> &data) {
+void deleteInvalidZeros(vector<int> &data) {
     if (data.size()==1) return;
     for (int i = data.size()-1; i >= 1; --i){
         if (data[i] == 0) data.pop_back();
@@ -44,9 +58,9 @@ void DeleteInvalidZeros(vector<int> &data) {
 
 BigInt::BigInt(string input) {
     sign = (input[0] == '-');
-    data = CreateVector(input);
-    DeleteInvalidZeros(data);
-
+    data = createVector(input);
+    deleteInvalidZeros(data);
+    if (data[0] == 0) sign = false;
 }
 
 BigInt& BigInt::operator=(const BigInt &second) {
@@ -86,7 +100,7 @@ BigInt BigInt::operator~() const {
         negation.sign = true;
     }
     else{
-        --negation;
+        ++negation;
         negation.sign = false;
     }
     return negation;
@@ -197,13 +211,13 @@ BigInt operator+(BigInt left, const BigInt& right) {
         for (int i = 0; i < right.data.size(); ++i){
             if (i == left.data.size()) left.data.push_back(0);
             left.data[i] += right.data[i];
-            if (left.data[i] >= left.base){
-                left.data[i] %= 1000000000;
+            if (left.data[i] >= BASE){
+                left.data[i] %= BASE;
                 if (i == left.data.size() - 1) left.data.push_back(shiftOne);
                 else left.data[i+1] += shiftOne;
             }
         }
-        if ((size(left)==sizeof(int)) && (int)left == 0) left.sign = false;
+        if ((left.size()==sizeof(int)) && (int)left == 0) left.sign = false;
         return left;
     }
     else if (left.sign) return right - (-left);
@@ -218,12 +232,12 @@ BigInt operator-(BigInt left, const BigInt& right) {
     for (int i = 0; i < right.data.size() || take != 0; ++i){
         left.data[i] -= take + (i != right.data.size() ? right.data[i] : 0);
         if (left.data[i] < 0) {
-            left.data[i] += left.base;
+            left.data[i] += BASE;
             take = 1;
         }
         else take = 0;
     }
-    DeleteInvalidZeros(left.data);
+    deleteInvalidZeros(left.data);
     return left;
 }
 
@@ -234,17 +248,17 @@ BigInt operator*(const BigInt& left, const BigInt& right){
         int carry = 0;
         for (int j = 0; j < left.data.size() || carry != 0; ++j){
             long long int cur = result.data[i + j] + 1LL * right.data[i] * (j < left.data.size() ? left. data[j] : 0) + carry;
-            result.data[i+j] += static_cast<int>(cur % result.base);
-            carry = static_cast<int>(cur / result.base);
+            result.data[i+j] += static_cast<int>(cur % BASE);
+            carry = static_cast<int>(cur / BASE);
 
         }
     }
-    DeleteInvalidZeros(result.data);
+    deleteInvalidZeros(result.data);
     result.sign = (left.sign != right.sign);
     return result;
 }
 
-void ShiftRight(vector<int> &shift){
+void shiftRight(vector<int> &shift){
     if (shift.empty()){
         shift.push_back(0);
         return;
@@ -256,16 +270,16 @@ void ShiftRight(vector<int> &shift){
     shift[0] = 0;
 }
 
-BigInt ConvertIntToBigInt(int item){
-    BigInt converted(item);
-    return converted;
+BigInt convertIntToBigInt(int item){
+    BigInt conv(item);
+    return conv;
 }
 
-int FindElemOfResult(const BigInt& cur, const BigInt& divider){
-    int elemOfResult = 0, left = 0, right = 1000000000;
+int findElemOfResult(const BigInt& cur, const BigInt& divider){
+    int elemOfResult = 0, left = 0, right = BASE;
     while (left <= right){
         int middle = (left + right)/2;
-        BigInt tmp = ConvertIntToBigInt(middle) * divider;
+        BigInt tmp = convertIntToBigInt(middle) * divider;
         if (tmp <= cur){
             elemOfResult = middle;
             left = middle + 1;
@@ -281,14 +295,14 @@ BigInt operator/(const BigInt& left, const BigInt& right){
     divider.sign = false;
     result.data.resize(left.data.size());
     for (int i = left.data.size() - 1; i >= 0; --i){
-        ShiftRight(shift.data);
+        shiftRight(shift.data);
         shift.data[0] = left.data[i];
-        DeleteInvalidZeros(shift.data);
-        int elemOfResult = FindElemOfResult(shift, divider);
+        deleteInvalidZeros(shift.data);
+        int elemOfResult = findElemOfResult(shift, divider);
         result.data[i] = elemOfResult;
-        shift = shift - (ConvertIntToBigInt(elemOfResult) * divider);
+        shift = shift - (convertIntToBigInt(elemOfResult) * divider);
     }
-    DeleteInvalidZeros(result.data);
+    deleteInvalidZeros(result.data);
     result.sign = (left.sign != right.sign);
     return result;
 }
@@ -300,7 +314,7 @@ BigInt operator%(const BigInt& left, const BigInt& right){
     return result;
 }
 
-int CalcCountOfZeros(int n){
+int calcCountOfZeros(int n){
     int length = 0;
     while(n > 0){
         ++length;
@@ -309,17 +323,22 @@ int CalcCountOfZeros(int n){
     return 9 - length;
 }
 
-void PrintZeros(ostream& stream, int countOfZeros){
+void printZeros(ostream& stream, int countOfZeros){
     for (int i = 1; i <= countOfZeros; ++i)
         stream << 0;
 }
 
-//переделать
 BigInt::operator int() const {
-    return this->data[0];
+    int conv = 0, pow = 1;
+    for (int i = 0; i < this->data.size(); ++i){
+        conv += this->data[i]*pow;
+        pow *= BASE;
+    }
+    if (this->sign) conv *= (-1);
+    return conv;
 }
 
-string ConvertIntToStr(int item){
+string convertIntToStr(int item){
     if (item == 0) return "0";
     string strInt;
     while (item > 0){
@@ -329,15 +348,16 @@ string ConvertIntToStr(int item){
     return strInt;
 }
 
-string ConvertBigIntToStr(const vector<int> &data){
+string convertBigIntToStr(const vector<int> &data){
     string strBigInt;
     for (int i = data.size() - 1; i >= 0; --i)
-        strBigInt += ConvertIntToStr(data[i]);
+        strBigInt += convertIntToStr(data[i]);
     return strBigInt;
 }
 
 BigInt::operator string() const{
-    string strBigInt = ConvertBigIntToStr(this->data);
+    string strBigInt = convertBigIntToStr(this->data);
+    if (this->sign) strBigInt = '-' + strBigInt;
     return strBigInt;
 }
 
@@ -349,74 +369,73 @@ ostream& operator<<(ostream& stream, const BigInt& num){
     if (num.sign)
         stream << '-';
     for (int i = num.data.size() - 1; i >= 0; --i){
-        int countOfZeros = CalcCountOfZeros(num.data[i]);
+        int countOfZeros = calcCountOfZeros(num.data[i]);
         if (i != num.data.size() - 1)
-            PrintZeros(stream, countOfZeros);
+            printZeros(stream, countOfZeros);
         stream << num.data[i];
     }
     return stream;
 }
 
-string ConvertBigIntToBin(BigInt num){
+string convertBigIntToBin(BigInt num){
     num = absBigInt(num);
     string bin;
     while (num > 0){
-        bin = ConvertIntToStr((int)(num % 2)) + bin;
+        bin = convertIntToStr((int) (num % 2)) + bin;
         num /= 2;
     }
     return bin;
 }
 
-void AddNullBits(string& bin, int count){
+void addNullBits(string& bin, int count){
     while (count > 0){
         bin = "0" + bin;
         --count;
     }
 }
 
-void AlignBits(string& leftBin, string& rightBin){
+void alignBits(string& leftBin, string& rightBin){
     int difference = leftBin.size() - rightBin.size();
-    if (difference > 0) AddNullBits(rightBin, difference);
-    else if (difference < 0) AddNullBits(leftBin, abs(difference));
+    if (difference > 0) addNullBits(rightBin, difference);
+    else if (difference < 0) addNullBits(leftBin, abs(difference));
 }
 
-void DeleteLeadBits(string& bin){
+void deleteLeadBits(string& bin){
     while ((bin[0] == '0') && (bin.size() > 1))
         bin.erase(0, 1);
 }
 
-string BinOperatorAND(const string& left, const string& right){
+string applyBinOperatorAND(const string& left, const string& right){
     string resultBin;
     for (int i = 0; i < left.size(); ++i){
         if ((left[i] == '0') || (right[i] == '0')) resultBin += '0';
         else resultBin += '1';
     }
-    DeleteLeadBits(resultBin);
+    deleteLeadBits(resultBin);
     return resultBin;
 }
 
-string BinOperatorOR(const string& left, const string& right){
+string applyBinOperatorOR(const string& left, const string& right){
     string resultBin;
     for (int i = 0; i < left.size(); ++i){
         if ((left[i] == '1') || (right[i] == '1')) resultBin += '1';
         else resultBin += '0';
     }
-    DeleteLeadBits(resultBin);
+    deleteLeadBits(resultBin);
     return resultBin;
 }
 
-string BinOperatorXOR(const string& left, const string& right){
+string applyBinOperatorXOR(const string& left, const string& right){
     string resultBin;
     for (int i = 0; i < left.size(); ++i){
         if (left[i] != right[i]) resultBin += '1';
         else resultBin += '0';
     }
-    cout << resultBin << endl;
-    DeleteLeadBits(resultBin);
+    deleteLeadBits(resultBin);
     return resultBin;
 }
 
-BigInt ConvertBinaryToBigInt(const string& bin){
+BigInt convertBinaryToBigInt(const string& bin){
     BigInt result(0);
     BigInt pow(1);
     for (int i = 0; i < bin.size(); ++i){
@@ -427,31 +446,31 @@ BigInt ConvertBinaryToBigInt(const string& bin){
 }
 
 BigInt operator&(const BigInt& left, const BigInt& right){
-    string leftBin = ConvertBigIntToBin(left);
-    string rightBin = ConvertBigIntToBin(right);
-    AlignBits(leftBin, rightBin);
-    string resultBin = BinOperatorAND(leftBin, rightBin);
-    BigInt result = ConvertBinaryToBigInt(resultBin);
+    string leftBin = convertBigIntToBin(left);
+    string rightBin = convertBigIntToBin(right);
+    alignBits(leftBin, rightBin);
+    string resultBin = applyBinOperatorAND(leftBin, rightBin);
+    BigInt result = convertBinaryToBigInt(resultBin);
     result.sign = (left.sign && right.sign);
     return result;
 }
 
 BigInt operator|(const BigInt& left, const BigInt& right){
-    string leftBin = ConvertBigIntToBin(left);
-    string rightBin = ConvertBigIntToBin(right);
-    AlignBits(leftBin, rightBin);
-    string resultBin = BinOperatorOR(leftBin, rightBin);
-    BigInt result = ConvertBinaryToBigInt(resultBin);
+    string leftBin = convertBigIntToBin(left);
+    string rightBin = convertBigIntToBin(right);
+    alignBits(leftBin, rightBin);
+    string resultBin = applyBinOperatorOR(leftBin, rightBin);
+    BigInt result = convertBinaryToBigInt(resultBin);
     result.sign = (left.sign || right.sign);
     return result;
 }
 
 BigInt operator^(const BigInt& left, const BigInt& right){
-    string leftBin = ConvertBigIntToBin(left);
-    string rightBin = ConvertBigIntToBin(right);
-    AlignBits(leftBin, rightBin);
-    string resultBin = BinOperatorXOR(leftBin, rightBin);
-    BigInt result = ConvertBinaryToBigInt(resultBin);
+    string leftBin = convertBigIntToBin(left);
+    string rightBin = convertBigIntToBin(right);
+    alignBits(leftBin, rightBin);
+    string resultBin = applyBinOperatorXOR(leftBin, rightBin);
+    BigInt result = convertBinaryToBigInt(resultBin);
     result.sign = (left.sign != right.sign);
     return result;
 }
