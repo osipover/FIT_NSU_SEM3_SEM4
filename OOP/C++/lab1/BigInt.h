@@ -13,17 +13,17 @@ public:
     explicit BigInt(int);
     explicit BigInt(string);
 
-    bool GetSign() {return this->sign;}
+    BigInt operator~() const;
+
+    BigInt& operator=(const BigInt&);
 
     BigInt operator+() const;
     BigInt operator-() const;
 
-    BigInt& operator=(const BigInt&);
     BigInt& operator++();
     BigInt operator++(int);
     BigInt& operator--();
     BigInt operator--(int);
-    BigInt operator~() const;
 
     BigInt& operator+=(const BigInt&);
     BigInt& operator-=(const BigInt&);
@@ -66,11 +66,8 @@ public:
     BigInt& operator/=(const int&);
     friend BigInt operator%(const BigInt& left, const int&);
 private:
-    const int base = 1000000000;
-    string bin;
     vector<int> data;
     bool sign;
-
 };
 
 BigInt absBigInt(const BigInt&);
