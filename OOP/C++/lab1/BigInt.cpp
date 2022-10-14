@@ -178,7 +178,24 @@ BigInt absBigInt(const BigInt& num){
 }
 
 BigInt& BigInt::operator+=(const BigInt &right ){
-    *this = *this + right;
+    if (this->sign == right.sign){
+        int shiftOne = 1;
+        for (int i = 0; i < right.data.size(); ++i){
+            if (i == this->data.size()) this->data.push_back(0);
+            this->data[i] += right.data[i];
+            if (this->data[i] >= BASE){
+                this->data[i] %= BASE;
+                if (i == this->data.size() - 1) this->data.push_back(shiftOne);
+                else this->data[i+1] += shiftOne;
+            }
+        }
+        if ((this->size()==sizeof(int)) && (int)(*this) == 0) this->sign = false;
+        return *this;
+    }
+    this->sign = !this->sign;
+    *this -= right;
+    this->sign = !this->sign;
+    if ((this->size()==sizeof(int)) && (int)(*this) == 0) this->sign = false;
     return *this;
 }
 
@@ -209,23 +226,10 @@ BigInt& BigInt::operator%=(const BigInt& right){
     return *this;
 }
 
-BigInt operator+(BigInt left, const BigInt& right) {
-    if (left.sign == right.sign){
-        int shiftOne = 1;
-        for (int i = 0; i < right.data.size(); ++i){
-            if (i == left.data.size()) left.data.push_back(0);
-            left.data[i] += right.data[i];
-            if (left.data[i] >= BASE){
-                left.data[i] %= BASE;
-                if (i == left.data.size() - 1) left.data.push_back(shiftOne);
-                else left.data[i+1] += shiftOne;
-            }
-        }
-        if ((left.size()==sizeof(int)) && (int)left == 0) left.sign = false;
-        return left;
-    }
-    else if (left.sign) return right - (-left);
-    else return left - (-right);
+BigInt operator+(const BigInt& left, const BigInt& right) {
+    BigInt result = left;
+    result += right;
+    return result;
 }
 
 BigInt operator-(BigInt left, const BigInt& right) {
