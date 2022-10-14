@@ -5,8 +5,12 @@
 
 class BigIntTestArguments{
 public:
-    BigIntTestArguments(BigInt firstArg, string result):firstArg(firstArg), result(std::move(result)){}
+    BigIntTestArguments(BigInt firstArg, string result):
+        firstArg(firstArg), result(std::move(result)){}
+    BigIntTestArguments(BigInt firstArg, BigInt secondArg, string result):
+        firstArg(firstArg), secondArg(secondArg), result(std::move(result)){}
     BigInt firstArg;
+    BigInt secondArg;
     string result;
 };
 
@@ -109,6 +113,33 @@ TEST_P(BigIntDecrement, TestPrefixDecrement){
     BigIntTestArguments v = GetParam();
     --v.firstArg;
     ASSERT_EQ(v.result, (string)v.firstArg);
+}
+
+class BigIntOperatorSum : public ::testing::TestWithParam<BigIntTestArguments>{};
+
+INSTANTIATE_TEST_SUITE_P(
+        BigIntTest,
+        BigIntOperatorSum,
+        ::testing::Values(
+            BigIntTestArguments(BigInt("123476183746823764123"), BigInt("7234628471282378913443"), "7358104655029202677566"),
+            BigIntTestArguments(BigInt("111111111"), BigInt("-222222222"), "-111111111"),
+            BigIntTestArguments(BigInt("222222222"), BigInt("-111111111"), "111111111"),
+            BigIntTestArguments(BigInt("-111111111"), BigInt("222222222"), "111111111"),
+            BigIntTestArguments(BigInt("-222222222"), BigInt("111111111"), "-111111111"),
+            BigIntTestArguments(BigInt("-555555555"), BigInt("-1000000000000"), "-1000555555555"),
+            BigIntTestArguments(BigInt("-0"), BigInt("-0"), "0"))
+
+);
+
+TEST_P(BigIntOperatorSum, TestSumAsigment){
+    BigIntTestArguments v = GetParam();
+    v.firstArg += v.secondArg;
+    ASSERT_EQ(v.result, (string)v.firstArg);
+}
+
+TEST_P(BigIntOperatorSum, TestOperatorSum){
+    BigIntTestArguments v = GetParam();
+    ASSERT_EQ(v.result, (string)(v.firstArg + v.secondArg));
 }
 
 
