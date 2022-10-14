@@ -46,12 +46,14 @@ vector<int> createVector(string strBigInt){
             ++digits;
         }
     }
+
     return data;
 }
 
 void deleteInvalidZeros(vector<int> &data) {
     if (data.size()==1) return;
     for (int i = data.size()-1; i >= 1; --i){
+        if (data[i] != 0) break;
         if (data[i] == 0) data.pop_back();
     }
 }
@@ -59,6 +61,8 @@ void deleteInvalidZeros(vector<int> &data) {
 BigInt::BigInt(string input) {
     sign = (input[0] == '-');
     data = createVector(input);
+
+
     deleteInvalidZeros(data);
     if (data[0] == 0) sign = false;
 }
@@ -77,7 +81,7 @@ BigInt& BigInt::operator++() {
 
 BigInt& BigInt::operator--(){
     BigInt dec(1);
-    *this -= dec;
+    *this = *this -  dec;
     return *this;
 }
 
@@ -230,7 +234,7 @@ BigInt operator-(BigInt left, const BigInt& right) {
     else if (left < right) return -(right - left);
     int take = 0;
     for (int i = 0; i < right.data.size() || take != 0; ++i){
-        left.data[i] -= take + (i != right.data.size() ? right.data[i] : 0);
+        left.data[i] -= take + (i < right.data.size() ? right.data[i] : 0);
         if (left.data[i] < 0) {
             left.data[i] += BASE;
             take = 1;
@@ -324,7 +328,7 @@ int calcCountOfZeros(int n){
 }
 
 void printZeros(ostream& stream, int countOfZeros){
-    for (int i = 1; i <= countOfZeros; ++i)
+    for (int i = 1; i < countOfZeros; ++i)
         stream << 0;
 }
 
@@ -348,10 +352,19 @@ string convertIntToStr(int item){
     return strInt;
 }
 
+void printZeros(string* strBigInt, int countOfZeros){
+    for (int i = 1; i < countOfZeros; ++i)
+        *strBigInt = *strBigInt + '0';
+}
+
 string convertBigIntToStr(const vector<int> &data){
     string strBigInt;
-    for (int i = data.size() - 1; i >= 0; --i)
+    for (int i = data.size() - 1; i >= 0; --i){
+        int countOfZeros = calcCountOfZeros(data[i]);
+        if (i != data.size() - 1) printZeros(&strBigInt, countOfZeros);
         strBigInt += convertIntToStr(data[i]);
+    }
+
     return strBigInt;
 }
 
