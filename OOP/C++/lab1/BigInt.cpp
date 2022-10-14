@@ -64,7 +64,7 @@ BigInt::BigInt(string input) {
 
 
     deleteInvalidZeros(data);
-    if (data[0] == 0) sign = false;
+    if ((data[0] == 0) && (data.size() == 1)) sign = false;
 }
 
 BigInt& BigInt::operator=(const BigInt &second) {
