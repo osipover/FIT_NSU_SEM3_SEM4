@@ -34,6 +34,7 @@ TEST(BigIntTest, TestConstructorString){
     ASSERT_EQ("-12345678987654321", (string)v2);
     ASSERT_EQ("1", (string)v3);
     ASSERT_EQ("0", (string)v4);
+    ASSERT_THROW({BigInt v("123error456");}, invalid_argument);
 }
 
 TEST(BigIntTest, TestAssignment){
@@ -128,10 +129,9 @@ INSTANTIATE_TEST_SUITE_P(
             BigIntTestArguments(BigInt("-222222222"), BigInt("111111111"), "-111111111"),
             BigIntTestArguments(BigInt("-555555555"), BigInt("-1000000000000"), "-1000555555555"),
             BigIntTestArguments(BigInt("-0"), BigInt("-0"), "0"))
-
 );
 
-TEST_P(BigIntOperatorSum, TestSumAsigment){
+TEST_P(BigIntOperatorSum, TestSumAssignment){
     BigIntTestArguments v = GetParam();
     v.firstArg += v.secondArg;
     ASSERT_EQ(v.result, (string)v.firstArg);
@@ -142,7 +142,58 @@ TEST_P(BigIntOperatorSum, TestOperatorSum){
     ASSERT_EQ(v.result, (string)(v.firstArg + v.secondArg));
 }
 
+class BigIntOperatorDiff : public ::testing:: TestWithParam<BigIntTestArguments>{};
 
+INSTANTIATE_TEST_SUITE_P(
+        BigIntTest,
+        BigIntOperatorDiff,
+        ::testing::Values(
+                BigIntTestArguments(BigInt("82837473481334132371371"), BigInt("1631266371726316929"), "82835842214962406054442"),
+                BigIntTestArguments(BigInt("11231726"), BigInt("1461783641982736481738412"), "-1461783641982736470506686"),
+                BigIntTestArguments(BigInt("52362534"), BigInt("-723862"), "53086396"),
+                BigIntTestArguments(BigInt("-123456789"), BigInt("987654321"), "-1111111110"),
+                BigIntTestArguments(BigInt("-123454321"), BigInt("-12345"), "-123441976"),
+                BigIntTestArguments(BigInt("-12345"), BigInt("-123454321"), "123441976"),
+                BigIntTestArguments(BigInt("999999999999999999999"), BigInt("999999999999000000000"), "999999999"),
+                BigIntTestArguments(BigInt("-1"), BigInt("-1"), "0"),
+                BigIntTestArguments(BigInt("-0"), BigInt("-0"), "0"))
+);
+
+TEST_P(BigIntOperatorDiff, TestDiffAssignment){
+    BigIntTestArguments v = GetParam();
+    v.firstArg -= v.secondArg;
+    ASSERT_EQ(v.result, (string)v.firstArg);
+}
+
+TEST_P(BigIntOperatorDiff, TestOperatorDiff){
+    BigIntTestArguments v = GetParam();
+    ASSERT_EQ(v.result, (string)(v.firstArg - v.secondArg));
+}
+
+class BigIntOperatorMul : public ::testing:: TestWithParam<BigIntTestArguments>{};
+
+INSTANTIATE_TEST_SUITE_P(
+        BigIntTest,
+        BigIntOperatorMul,
+        ::testing::Values(
+                BigIntTestArguments(BigInt("1234651783"), BigInt("1832941736434817342"), "2263044783024363294579620786"),
+                BigIntTestArguments(BigInt("1832941736434817342"), BigInt("1234651783"), "2263044783024363294579620786"),
+                BigIntTestArguments(BigInt("-12345"), BigInt("12345"), "-152399025"),
+                BigIntTestArguments(BigInt("12345"), BigInt("-12345"), "-152399025"),
+                BigIntTestArguments(BigInt("-12345"), BigInt("-12345"), "152399025"),
+                BigIntTestArguments(BigInt("19837491837471263548172634"), BigInt("0"), "0"))
+);
+
+TEST_P(BigIntOperatorMul, TestMulAssignment){
+    BigIntTestArguments v = GetParam();
+    v.firstArg *= v.secondArg;
+    ASSERT_EQ(v.result, (string)v.firstArg);
+}
+
+TEST_P(BigIntOperatorMul, TestOperatorMul){
+    BigIntTestArguments v = GetParam();
+    ASSERT_EQ(v.result, (string)(v.firstArg * v.secondArg));
+}
 
 int main(){
     testing::InitGoogleTest();
