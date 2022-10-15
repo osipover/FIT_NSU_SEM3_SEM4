@@ -42,9 +42,6 @@ public:
     bool operator<=(const BigInt&) const;
     bool operator>=(const BigInt&) const;
 
-    friend BigInt operator+(BigInt left, const BigInt& right);
-    friend BigInt operator-(BigInt left, const BigInt& right);
-    friend BigInt operator*(const BigInt& left, const BigInt& right);
     friend BigInt operator*(const BigInt& left, const int& right);
     friend BigInt operator/(const BigInt& left, const BigInt& right);
     friend BigInt operator%(const BigInt& left, const BigInt& right);
@@ -72,8 +69,8 @@ private:
 
 BigInt absBigInt(const BigInt&);
 
-BigInt operator+(BigInt left, const BigInt& right);
-BigInt operator-(BigInt left, const BigInt& right);
+BigInt operator+(const BigInt& left, const BigInt& right);
+BigInt operator-(const BigInt& left, const BigInt& right);
 BigInt operator*(const BigInt& left, const BigInt& right);
 BigInt operator/(const BigInt& left, const BigInt& right);
 BigInt operator%(const BigInt& left, const BigInt& right);
