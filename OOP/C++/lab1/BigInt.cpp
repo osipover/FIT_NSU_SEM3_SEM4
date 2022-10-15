@@ -29,10 +29,16 @@ BigInt::BigInt(int input){
     data = createVector(abs(newValue));
 }
 
+bool isSymbCorrect (char symb){
+    if ((('0' <= symb) && (symb <= '9')) || (symb == '-')) return true;
+    else return false;
+}
+
 vector<int> createVector(string strBigInt){
     vector<int> data;
     int newItem = 0, digits = 1, pow = 1;
     for (int i = strBigInt.length() - 1; i >= 0; --i){
+        if (!isSymbCorrect(strBigInt[i])) throw invalid_argument("invalid symbol");
         if (strBigInt[i] != '-')
             newItem = pow * (strBigInt[i] - '0') + newItem;
         if ((digits == 9) || (i == 0)) {
@@ -206,15 +212,45 @@ BigInt& BigInt::operator+=(const int &rightInt){
 }
 
 BigInt& BigInt::operator-=(const BigInt &right){
-    *this = *this - right;
+    if (this->sign != right.sign){
+        this->sign = !this->sign;
+        *this += right;
+        this->sign = !this->sign;
+        return *this;
+    }
+    bool resultSign = (*this < right);
+    if (this->data.size() < right.data.size()) this->data.resize(right.data.size(), 0);
+    int take = 0;
+    for (int i = 0; i < right.data.size() || take != 0; ++i){
+        this->data[i] -= take + (i < right.data.size() ? right.data[i] : 0);
+        if (this->data[i] < 0) {
+            this->data[i] = (resultSign || right.sign) ? this->data[i] * (-1) : this->data[i] + BASE;
+            take = (resultSign || right.sign) ? 0 : 1;
+        }
+        else take = 0;
+    }
+    this->sign = resultSign;
+    deleteInvalidZeros(this->data);
     return *this;
 }
 
 BigInt& BigInt::operator*=(const BigInt &right){
-    *this = *this * right;
+    BigInt result;
+    result.data.resize(this->data.size() + right.data.size());
+    for (int i = 0; i < right.data.size(); ++i){
+        int carry = 0;
+        for (int j = 0; j < this->data.size() || carry != 0; ++j){
+            long long int cur = result.data[i + j] + 1LL * right.data[i] * (j < this->data.size() ? this->data[j] : 0) + carry;
+            result.data[i+j] = static_cast<int>(cur % BASE);
+            carry = static_cast<int>(cur / BASE);
+
+        }
+    }
+    deleteInvalidZeros(result.data);
+    result.sign = (this->sign != right.sign);
+    *this = result;
     return *this;
 }
-
 
 BigInt& BigInt::operator/=(const BigInt &right){
     *this = *this / right;
@@ -232,37 +268,15 @@ BigInt operator+(const BigInt& left, const BigInt& right) {
     return result;
 }
 
-BigInt operator-(BigInt left, const BigInt& right) {
-    if (right.sign) return left + (-right);
-    else if (left.sign) return -(-left + right);
-    else if (left < right) return -(right - left);
-    int take = 0;
-    for (int i = 0; i < right.data.size() || take != 0; ++i){
-        left.data[i] -= take + (i < right.data.size() ? right.data[i] : 0);
-        if (left.data[i] < 0) {
-            left.data[i] += BASE;
-            take = 1;
-        }
-        else take = 0;
-    }
-    deleteInvalidZeros(left.data);
-    return left;
+BigInt operator-(const BigInt& left, const BigInt& right) {
+    BigInt result = left;
+    result -= right;
+    return result;
 }
 
 BigInt operator*(const BigInt& left, const BigInt& right){
-    BigInt result;
-    result.data.resize(left.data.size() + right.data.size());
-    for (int i = 0; i < right.data.size(); ++i){
-        int carry = 0;
-        for (int j = 0; j < left.data.size() || carry != 0; ++j){
-            long long int cur = result.data[i + j] + 1LL * right.data[i] * (j < left.data.size() ? left. data[j] : 0) + carry;
-            result.data[i+j] += static_cast<int>(cur % BASE);
-            carry = static_cast<int>(cur / BASE);
-
-        }
-    }
-    deleteInvalidZeros(result.data);
-    result.sign = (left.sign != right.sign);
+    BigInt result = left;
+    result *= right;
     return result;
 }
 
@@ -323,6 +337,7 @@ BigInt operator%(const BigInt& left, const BigInt& right){
 }
 
 int calcCountOfZeros(int n){
+    if (n == 0) return 8;
     int length = 0;
     while(n > 0){
         ++length;
@@ -332,7 +347,7 @@ int calcCountOfZeros(int n){
 }
 
 void printZeros(ostream& stream, int countOfZeros){
-    for (int i = 1; i < countOfZeros; ++i)
+    for (int i = 1; i <= countOfZeros; ++i)
         stream << 0;
 }
 
@@ -357,7 +372,7 @@ string convertIntToStr(int item){
 }
 
 void printZeros(string* strBigInt, int countOfZeros){
-    for (int i = 1; i < countOfZeros; ++i)
+    for (int i = 1; i <= countOfZeros; ++i)
         *strBigInt = *strBigInt + '0';
 }
 
