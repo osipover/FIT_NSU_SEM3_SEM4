@@ -406,15 +406,7 @@ size_t BigInt::size() const{
 }
 
 ostream& operator<<(ostream& stream, const BigInt& num){
-    if (num.sign)
-        stream << '-';
-    for (int i = num.data.size() - 1; i >= 0; --i){
-        int countOfZeros = calcCountOfZeros(num.data[i]);
-        if (i != num.data.size() - 1)
-            printZeros(stream, countOfZeros);
-        stream << num.data[i];
-    }
-    return stream;
+    return stream << (string)num;
 }
 
 string convertBigIntToBin(BigInt num){
@@ -486,47 +478,53 @@ BigInt convertBinaryToBigInt(const string& bin){
 }
 
 BigInt operator&(const BigInt& left, const BigInt& right){
-    string leftBin = convertBigIntToBin(left);
-    string rightBin = convertBigIntToBin(right);
-    alignBits(leftBin, rightBin);
-    string resultBin = applyBinOperatorAND(leftBin, rightBin);
-    BigInt result = convertBinaryToBigInt(resultBin);
-    result.sign = (left.sign && right.sign);
+    BigInt result = left;
+    result &= right;
     return result;
 }
 
 BigInt operator|(const BigInt& left, const BigInt& right){
-    string leftBin = convertBigIntToBin(left);
-    string rightBin = convertBigIntToBin(right);
-    alignBits(leftBin, rightBin);
-    string resultBin = applyBinOperatorOR(leftBin, rightBin);
-    BigInt result = convertBinaryToBigInt(resultBin);
-    result.sign = (left.sign || right.sign);
+    BigInt result = left;
+    result |= right;
     return result;
 }
 
 BigInt operator^(const BigInt& left, const BigInt& right){
-    string leftBin = convertBigIntToBin(left);
-    string rightBin = convertBigIntToBin(right);
-    alignBits(leftBin, rightBin);
-    string resultBin = applyBinOperatorXOR(leftBin, rightBin);
-    BigInt result = convertBinaryToBigInt(resultBin);
-    result.sign = (left.sign != right.sign);
+    BigInt result = left;
+    result ^= right;
     return result;
 }
 
 BigInt& BigInt::operator&=(const BigInt& right){
-    *this = *this & right;
+    string leftBin = convertBigIntToBin(*this);
+    string rightBin = convertBigIntToBin(right);
+    alignBits(leftBin, rightBin);
+    string resultBin = applyBinOperatorAND(leftBin, rightBin);
+    BigInt result = convertBinaryToBigInt(resultBin);
+    result.sign = (this->sign && right.sign);
+    *this = result;
     return *this;
 }
 
 BigInt& BigInt::operator|=(const BigInt& right){
-    *this = *this | right;
+    string leftBin = convertBigIntToBin(*this);
+    string rightBin = convertBigIntToBin(right);
+    alignBits(leftBin, rightBin);
+    string resultBin = applyBinOperatorOR(leftBin, rightBin);
+    BigInt result = convertBinaryToBigInt(resultBin);
+    result.sign = (this->sign || right.sign);
+    *this = result;
     return *this;
 }
 
 BigInt& BigInt::operator^=(const BigInt& right){
-    *this = *this ^ right;
+    string leftBin = convertBigIntToBin(*this);
+    string rightBin = convertBigIntToBin(right);
+    alignBits(leftBin, rightBin);
+    string resultBin = applyBinOperatorXOR(leftBin, rightBin);
+    BigInt result = convertBinaryToBigInt(resultBin);
+    result.sign = (this->sign != right.sign);
+    *this = result;
     return *this;
 }
 
