@@ -6,7 +6,7 @@
 class BigIntTestArguments{
 public:
     BigIntTestArguments(BigInt firstArg, string result):
-        firstArg(firstArg), result(std::move(result)){}
+        firstArg(firstArg), secondArg(BigInt(0)), result(std::move(result)){}
     BigIntTestArguments(BigInt firstArg, BigInt secondArg, string result):
         firstArg(firstArg), secondArg(secondArg), result(std::move(result)){}
     BigInt firstArg;
@@ -59,7 +59,7 @@ TEST(BigIntTest, TestIntConversion){
     ASSERT_EQ(2147483647, (int)v2);
 }
 
-TEST(BigIntTest, TestBinNOT){
+TEST(BigIntTest, TestOperatorNOT){
     BigInt v1(2147483647);
     BigInt v2("-2147483648");
     BigInt v3(0);
@@ -90,7 +90,7 @@ protected:
     }
 };
 
-TEST_F(BigIntComparison, TestOperatorEqually){
+TEST_F(BigIntComparison, TestOperatorEQUAL){
     ASSERT_EQ(*argument[0] == *argument[3], false);
     ASSERT_EQ(*argument[0] == *argument[1], false);
     ASSERT_EQ(*argument[0] == *argument[2], false);
@@ -98,7 +98,7 @@ TEST_F(BigIntComparison, TestOperatorEqually){
     ASSERT_EQ(*argument[3] == *argument[3], true);
 }
 
-TEST_F(BigIntComparison, TestOperatorNotEqually){
+TEST_F(BigIntComparison, TestOperatorNOT_EQUAL){
     ASSERT_EQ(*argument[0] != *argument[3], true);
     ASSERT_EQ(*argument[0] != *argument[1], true);
     ASSERT_EQ(*argument[0] != *argument[2], true);
@@ -106,7 +106,7 @@ TEST_F(BigIntComparison, TestOperatorNotEqually){
     ASSERT_EQ(*argument[3] != *argument[3], false);
 }
 
-TEST_F(BigIntComparison, TestOperatorLess){
+TEST_F(BigIntComparison, TestOperatorLESS){
     ASSERT_EQ(*argument[0] < *argument[0], false);
     ASSERT_EQ(*argument[3] < *argument[3], false);
 
@@ -124,7 +124,7 @@ TEST_F(BigIntComparison, TestOperatorLess){
     ASSERT_EQ(*argument[5] < *argument[3], true);
 }
 
-TEST_F(BigIntComparison, TestOperatorLessOrEqually){
+TEST_F(BigIntComparison, TestOperatorLESS_OR_EQUAL){
     ASSERT_EQ(*argument[0] <= *argument[0], true);
     ASSERT_EQ(*argument[3] <= *argument[3], true);
 
@@ -142,7 +142,7 @@ TEST_F(BigIntComparison, TestOperatorLessOrEqually){
     ASSERT_EQ(*argument[5] <= *argument[3], true);
 }
 
-TEST_F(BigIntComparison, TestOperatorGreater){
+TEST_F(BigIntComparison, TestOperatorGREATER){
     ASSERT_EQ(*argument[0] > *argument[0], false);
     ASSERT_EQ(*argument[3] > *argument[3], false);
 
@@ -160,7 +160,7 @@ TEST_F(BigIntComparison, TestOperatorGreater){
     ASSERT_EQ(*argument[5] > *argument[3], false);
 }
 
-TEST_F(BigIntComparison, TestOperatorGreaterOrEqual){
+TEST_F(BigIntComparison, TestOperatorGREATER_OR_EQUAL){
     ASSERT_EQ(*argument[0] >= *argument[0], true);
     ASSERT_EQ(*argument[3] >= *argument[3], true);
 
@@ -226,11 +226,11 @@ TEST_P(BigIntDecrement, TestPrefixDecrement){
     ASSERT_EQ(v.result, (string)v.firstArg);
 }
 
-class BigIntOperatorSum : public ::testing::TestWithParam<BigIntTestArguments>{};
+class BigIntOperatorADD : public ::testing::TestWithParam<BigIntTestArguments>{};
 
 INSTANTIATE_TEST_SUITE_P(
         BigIntTest,
-        BigIntOperatorSum,
+        BigIntOperatorADD,
         ::testing::Values(
             BigIntTestArguments(BigInt("123476183746823764123"), BigInt("7234628471282378913443"), "7358104655029202677566"),
             BigIntTestArguments(BigInt("111111111"), BigInt("-222222222"), "-111111111"),
@@ -241,22 +241,22 @@ INSTANTIATE_TEST_SUITE_P(
             BigIntTestArguments(BigInt("-0"), BigInt("-0"), "0"))
 );
 
-TEST_P(BigIntOperatorSum, TestSumAssignment){
+TEST_P(BigIntOperatorADD, TestAssignmentADD){
     BigIntTestArguments v = GetParam();
     v.firstArg += v.secondArg;
     ASSERT_EQ(v.result, (string)v.firstArg);
 }
 
-TEST_P(BigIntOperatorSum, TestOperatorSum){
+TEST_P(BigIntOperatorADD, TestOperatorADD){
     BigIntTestArguments v = GetParam();
     ASSERT_EQ(v.result, (string)(v.firstArg + v.secondArg));
 }
 
-class BigIntOperatorDiff : public ::testing:: TestWithParam<BigIntTestArguments>{};
+class BigIntOperatorSUB : public ::testing:: TestWithParam<BigIntTestArguments>{};
 
 INSTANTIATE_TEST_SUITE_P(
         BigIntTest,
-        BigIntOperatorDiff,
+        BigIntOperatorSUB,
         ::testing::Values(
                 BigIntTestArguments(BigInt("82837473481334132371371"), BigInt("1631266371726316929"), "82835842214962406054442"),
                 BigIntTestArguments(BigInt("11231726"), BigInt("1461783641982736481738412"), "-1461783641982736470506686"),
@@ -269,22 +269,22 @@ INSTANTIATE_TEST_SUITE_P(
                 BigIntTestArguments(BigInt("-0"), BigInt("-0"), "0"))
 );
 
-TEST_P(BigIntOperatorDiff, TestDiffAssignment){
+TEST_P(BigIntOperatorSUB, TestAssignmentSUB){
     BigIntTestArguments v = GetParam();
     v.firstArg -= v.secondArg;
     ASSERT_EQ(v.result, (string)v.firstArg);
 }
 
-TEST_P(BigIntOperatorDiff, TestOperatorDiff){
+TEST_P(BigIntOperatorSUB, TestOperatorSUB){
     BigIntTestArguments v = GetParam();
     ASSERT_EQ(v.result, (string)(v.firstArg - v.secondArg));
 }
 
-class BigIntOperatorMul : public ::testing:: TestWithParam<BigIntTestArguments>{};
+class BigIntOperatorMUL : public ::testing:: TestWithParam<BigIntTestArguments>{};
 
 INSTANTIATE_TEST_SUITE_P(
         BigIntTest,
-        BigIntOperatorMul,
+        BigIntOperatorMUL,
         ::testing::Values(
                 BigIntTestArguments(BigInt("1234651783"), BigInt("1832941736434817342"), "2263044783024363294579620786"),
                 BigIntTestArguments(BigInt("1832941736434817342"), BigInt("1234651783"), "2263044783024363294579620786"),
@@ -294,22 +294,22 @@ INSTANTIATE_TEST_SUITE_P(
                 BigIntTestArguments(BigInt("19837491837471263548172634"), BigInt("0"), "0"))
 );
 
-TEST_P(BigIntOperatorMul, TestMulAssignment){
+TEST_P(BigIntOperatorMUL, TestAssignmentMUL){
     BigIntTestArguments v = GetParam();
     v.firstArg *= v.secondArg;
     ASSERT_EQ(v.result, (string)v.firstArg);
 }
 
-TEST_P(BigIntOperatorMul, TestOperatorMul){
+TEST_P(BigIntOperatorMUL, TestOperatorMUL){
     BigIntTestArguments v = GetParam();
     ASSERT_EQ(v.result, (string)(v.firstArg * v.secondArg));
 }
 
-class BigIntOperatorDiv : public ::testing:: TestWithParam<BigIntTestArguments>{};
+class BigIntOperatorDIV : public ::testing:: TestWithParam<BigIntTestArguments>{};
 
 INSTANTIATE_TEST_SUITE_P(
         BigIntTest,
-        BigIntOperatorDiv,
+        BigIntOperatorDIV,
         ::testing::Values(
                 BigIntTestArguments(BigInt("1274617623764374237478236426"), BigInt("827384728374234"), "1540538010979"),
                 BigIntTestArguments(BigInt("1274617623764374237478236426"), BigInt("2"), "637308811882187118739118213"),
@@ -320,28 +320,28 @@ INSTANTIATE_TEST_SUITE_P(
                 BigIntTestArguments(BigInt("-1274617623764374237478236426"), BigInt("-827384728374234"), "1540538010979"))
 );
 
-TEST_P(BigIntOperatorDiv, TestDivAssignment){
+TEST_P(BigIntOperatorDIV, TestAssignmentDIV){
     BigIntTestArguments v = GetParam();
     v.firstArg /= v.secondArg;
     ASSERT_EQ(v.result, (string)v.firstArg);
 }
 
-TEST_P(BigIntOperatorDiv, TestOperatorDiv){
+TEST_P(BigIntOperatorDIV, TestOperatorDIV){
     BigIntTestArguments v = GetParam();
     ASSERT_EQ(v.result, (string)(v.firstArg / v.secondArg));
 }
 
-TEST(BigIntOperatorDiv, TestDivByZero){
+TEST(BigIntOperatorDIV, TestDivByZero){
     BigInt v("18741872381273");
     BigInt zero("0");
     ASSERT_THROW(v / zero, invalid_argument);
 }
 
-class BigIntOperatorMod : public ::testing:: TestWithParam<BigIntTestArguments>{};
+class BigIntOperatorMOD : public ::testing:: TestWithParam<BigIntTestArguments>{};
 
 INSTANTIATE_TEST_SUITE_P(
         BigIntTest,
-        BigIntOperatorMod,
+        BigIntOperatorMOD,
         ::testing::Values(
                 BigIntTestArguments(BigInt("1274617623764374237478236426"),BigInt("827384728374234"), "331606765521340"),
                 BigIntTestArguments(BigInt("1274617623764374237478236426"),BigInt("2"), "0"),
@@ -352,15 +352,90 @@ INSTANTIATE_TEST_SUITE_P(
                 BigIntTestArguments(BigInt("-1274617623764374237478236426"),BigInt("-827384728374234"), "331606765521340"))
 );
 
-TEST_P(BigIntOperatorMod, TestModAssignment){
+TEST_P(BigIntOperatorMOD, TestAssignmentMOD){
     BigIntTestArguments v = GetParam();
     v.firstArg %= v.secondArg;
     ASSERT_EQ(v.result, (string)v.firstArg);
 }
 
-TEST_P(BigIntOperatorMod, TestOperatorMod){
+TEST_P(BigIntOperatorMOD, TestOperatorMOD){
     BigIntTestArguments v = GetParam();
     ASSERT_EQ(v.result, (string)(v.firstArg % v.secondArg));
+}
+
+class BigIntOperatorAND : public ::testing:: TestWithParam<BigIntTestArguments>{};
+
+INSTANTIATE_TEST_SUITE_P(
+        BigIntTest,
+        BigIntOperatorAND,
+        ::testing::Values(
+                BigIntTestArguments(BigInt("231231236123436172346"), BigInt("183413172"), "182616112"),
+                BigIntTestArguments(BigInt("183413172"), BigInt("231231236123436172346"), "182616112"),
+                BigIntTestArguments(BigInt("-231231236123436172346"), BigInt("183413172"), "182616112"),
+                BigIntTestArguments(BigInt("231231236123436172346"), BigInt("-183413172"), "182616112"),
+                BigIntTestArguments(BigInt("-231231236123436172346"), BigInt("-183413172"), "-182616112"),
+                BigIntTestArguments(BigInt("231231236123436172346"), BigInt("0"), "0"))
+);
+
+TEST_P(BigIntOperatorAND, TestAssignmentAND){
+    BigIntTestArguments v = GetParam();
+    v.firstArg &= v.secondArg;
+    ASSERT_EQ(v.result, (string)v.firstArg);
+}
+
+TEST_P(BigIntOperatorAND, TestOperatorAND){
+    BigIntTestArguments v = GetParam();
+    ASSERT_EQ(v.result, (string)(v.firstArg & v.secondArg));
+}
+
+class BigIntOperatorOR : public ::testing:: TestWithParam<BigIntTestArguments>{};
+
+INSTANTIATE_TEST_SUITE_P(
+        BigIntTest,
+        BigIntOperatorOR,
+        ::testing::Values(
+                BigIntTestArguments(BigInt("2312312361234"), BigInt("18341"), "2312312379319"),
+                BigIntTestArguments(BigInt("18341"), BigInt("2312312361234"), "2312312379319"),
+                BigIntTestArguments(BigInt("-2312312361234"), BigInt("18341"), "-2312312379319"),
+                BigIntTestArguments(BigInt("2312312361234"), BigInt("-18341"), "-2312312379319"),
+                BigIntTestArguments(BigInt("-2312312361234"), BigInt("-18341"), "-2312312379319"),
+                BigIntTestArguments(BigInt("231231236123436172346"), BigInt("0"), "231231236123436172346"))
+);
+
+TEST_P(BigIntOperatorOR, TestAssignmentOR){
+    BigIntTestArguments v = GetParam();
+    v.firstArg |= v.secondArg;
+    ASSERT_EQ(v.result, (string)v.firstArg);
+}
+
+TEST_P(BigIntOperatorOR, TestOperatorOR){
+    BigIntTestArguments v = GetParam();
+    ASSERT_EQ(v.result, (string)(v.firstArg | v.secondArg));
+}
+
+class BigIntOperatorXOR : public ::testing:: TestWithParam<BigIntTestArguments>{};
+
+INSTANTIATE_TEST_SUITE_P(
+        BigIntTest,
+        BigIntOperatorXOR,
+        ::testing::Values(
+                BigIntTestArguments(BigInt("2312312361234"), BigInt("345208190887"), "2516860036789"),
+                BigIntTestArguments(BigInt("345208190887"), BigInt("2312312361234"), "2516860036789"),
+                BigIntTestArguments(BigInt("-2312312361234"), BigInt("345208190887"), "-2516860036789"),
+                BigIntTestArguments(BigInt("2312312361234"), BigInt("-345208190887"), "-2516860036789"),
+                BigIntTestArguments(BigInt("-2312312361234"), BigInt("-345208190887"), "2516860036789"),
+                BigIntTestArguments(BigInt("231231236123436172346"), BigInt("0"), "231231236123436172346"))
+);
+
+TEST_P(BigIntOperatorXOR, TestAssignmentXOR){
+    BigIntTestArguments v = GetParam();
+    v.firstArg ^= v.secondArg;
+    ASSERT_EQ(v.result, (string)v.firstArg);
+}
+
+TEST_P(BigIntOperatorXOR, TestOperatorXOR){
+    BigIntTestArguments v = GetParam();
+    ASSERT_EQ(v.result, (string)(v.firstArg ^ v.secondArg));
 }
 
 int main(){
