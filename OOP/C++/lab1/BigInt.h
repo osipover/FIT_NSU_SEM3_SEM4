@@ -42,15 +42,6 @@ public:
     bool operator<=(const BigInt&) const;
     bool operator>=(const BigInt&) const;
 
-    friend BigInt operator*(const BigInt& left, const int& right);
-    friend BigInt operator/(const BigInt& left, const BigInt& right);
-    friend BigInt operator%(const BigInt& left, const BigInt& right);
-
-
-    friend BigInt operator&(const BigInt& left, const BigInt& right);
-    friend BigInt operator|(const BigInt& left, const BigInt& right);
-    friend BigInt operator^(const BigInt& left, const BigInt& right);
-
     explicit operator int() const;
     explicit operator string() const;
 
@@ -61,10 +52,10 @@ public:
     bool operator>(const int&) const;
     BigInt& operator+=(const int&);
     BigInt& operator/=(const int&);
-    friend BigInt operator%(const BigInt& left, const int&);
 private:
     vector<int> data;
     bool sign;
+    bool isZero(const BigInt&);
 };
 
 BigInt absBigInt(const BigInt&);
