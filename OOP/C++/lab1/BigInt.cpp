@@ -135,7 +135,7 @@ bool BigInt::operator!=(const BigInt& second) const {
 bool BigInt::operator<(const BigInt& second) const {
     if (*this == second) return false;
     if (this->sign && !second.sign) return true;
-    if (!(this->sign) && second.sign) return false;
+    if (!this->sign && second.sign) return false;
     if (!sign){
         if (this->data.size() < second.data.size()) return true;
         if (this->data.size() > second.data.size()) return false;
@@ -252,34 +252,6 @@ BigInt& BigInt::operator*=(const BigInt &right){
     return *this;
 }
 
-BigInt& BigInt::operator/=(const BigInt &right){
-    *this = *this / right;
-    return *this;
-}
-
-BigInt& BigInt::operator%=(const BigInt& right){
-    *this = *this % right;
-    return *this;
-}
-
-BigInt operator+(const BigInt& left, const BigInt& right) {
-    BigInt result = left;
-    result += right;
-    return result;
-}
-
-BigInt operator-(const BigInt& left, const BigInt& right) {
-    BigInt result = left;
-    result -= right;
-    return result;
-}
-
-BigInt operator*(const BigInt& left, const BigInt& right){
-    BigInt result = left;
-    result *= right;
-    return result;
-}
-
 void shiftRight(vector<int> &shift){
     if (shift.empty()){
         shift.push_back(0);
@@ -311,28 +283,64 @@ int findElemOfResult(const BigInt& cur, const BigInt& divider){
     return elemOfResult;
 }
 
-BigInt operator/(const BigInt& left, const BigInt& right){
+bool BigInt::isZero(const BigInt& v){
+    if ((v.data.size() == 1) && (v.data[0] == 0)) return true;
+    else return false;
+}
+
+BigInt& BigInt::operator/=(const BigInt &right){
+    if (isZero(right)) throw invalid_argument("you tried divide by zero");
     BigInt shift, result;
     BigInt divider = right;
     divider.sign = false;
-    result.data.resize(left.data.size());
-    for (int i = left.data.size() - 1; i >= 0; --i){
+    result.data.resize(this->data.size());
+    for (int i = this->data.size() - 1; i >= 0; --i){
         shiftRight(shift.data);
-        shift.data[0] = left.data[i];
+        shift.data[0] = this->data[i];
         deleteInvalidZeros(shift.data);
         int elemOfResult = findElemOfResult(shift, divider);
         result.data[i] = elemOfResult;
         shift = shift - (convertIntToBigInt(elemOfResult) * divider);
     }
     deleteInvalidZeros(result.data);
-    result.sign = (left.sign != right.sign);
+    result.sign = (this->sign != right.sign);
+    *this = result;
+    return *this;
+}
+
+BigInt& BigInt::operator%=(const BigInt& right){
+    this->sign = false;
+    *this = *this - ((*this / right) * right);
+    return *this;
+}
+
+BigInt operator+(const BigInt& left, const BigInt& right) {
+    BigInt result = left;
+    result += right;
+    return result;
+}
+
+BigInt operator-(const BigInt& left, const BigInt& right) {
+    BigInt result = left;
+    result -= right;
+    return result;
+}
+
+BigInt operator*(const BigInt& left, const BigInt& right){
+    BigInt result = left;
+    result *= right;
+    return result;
+}
+
+BigInt operator/(const BigInt& left, const BigInt& right){
+    BigInt result = left;
+    result /= right;
     return result;
 }
 
 BigInt operator%(const BigInt& left, const BigInt& right){
     BigInt result = left;
-    result.sign = false;
-    result = result - ((result / right) * right);
+    result %= right;
     return result;
 }
 
