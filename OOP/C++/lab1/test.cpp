@@ -68,6 +68,116 @@ TEST(BigIntTest, TestBinNOT){
     ASSERT_EQ("-1", (string)~v3);
 }
 
+class BigIntComparison : public ::testing::Test{
+public:
+    BigInt* argument[6];
+protected:
+    void SetUp(){
+        argument[0] = new BigInt("12345678987654321");
+        argument[1] = new BigInt("1234163271623473642341223443");
+        argument[2] = new BigInt("12345678987654322");
+        argument[3] = new BigInt("-12345678987654321");
+        argument[4] = new BigInt("-1234163271623473642341223443");
+        argument[5] = new BigInt("-98765432123456789");
+    }
+    void TearDown(){
+        delete argument[0];
+        delete argument[1];
+        delete argument[2];
+        delete argument[3];
+        delete argument[4];
+        delete argument[5];
+    }
+};
+
+TEST_F(BigIntComparison, TestOperatorEqually){
+    ASSERT_EQ(*argument[0] == *argument[3], false);
+    ASSERT_EQ(*argument[0] == *argument[1], false);
+    ASSERT_EQ(*argument[0] == *argument[2], false);
+    ASSERT_EQ(*argument[0] == *argument[0], true);
+    ASSERT_EQ(*argument[3] == *argument[3], true);
+}
+
+TEST_F(BigIntComparison, TestOperatorNotEqually){
+    ASSERT_EQ(*argument[0] != *argument[3], true);
+    ASSERT_EQ(*argument[0] != *argument[1], true);
+    ASSERT_EQ(*argument[0] != *argument[2], true);
+    ASSERT_EQ(*argument[0] != *argument[0], false);
+    ASSERT_EQ(*argument[3] != *argument[3], false);
+}
+
+TEST_F(BigIntComparison, TestOperatorLess){
+    ASSERT_EQ(*argument[0] < *argument[0], false);
+    ASSERT_EQ(*argument[3] < *argument[3], false);
+
+    ASSERT_EQ(*argument[3] < *argument[0], true);
+    ASSERT_EQ(*argument[0] < *argument[3], false);
+
+    ASSERT_EQ(*argument[0] < *argument[1], true);
+    ASSERT_EQ(*argument[1] < *argument[0], false);
+    ASSERT_EQ(*argument[0] < *argument[2], true);
+    ASSERT_EQ(*argument[2] < *argument[0], false);
+
+    ASSERT_EQ(*argument[3] < *argument[4], false);
+    ASSERT_EQ(*argument[4] < *argument[3], true);
+    ASSERT_EQ(*argument[3] < *argument[5], false);
+    ASSERT_EQ(*argument[5] < *argument[3], true);
+}
+
+TEST_F(BigIntComparison, TestOperatorLessOrEqually){
+    ASSERT_EQ(*argument[0] <= *argument[0], true);
+    ASSERT_EQ(*argument[3] <= *argument[3], true);
+
+    ASSERT_EQ(*argument[3] <= *argument[0], true);
+    ASSERT_EQ(*argument[0] <= *argument[3], false);
+
+    ASSERT_EQ(*argument[0] <= *argument[1], true);
+    ASSERT_EQ(*argument[1] <= *argument[0], false);
+    ASSERT_EQ(*argument[0] <= *argument[2], true);
+    ASSERT_EQ(*argument[2] <= *argument[0], false);
+
+    ASSERT_EQ(*argument[3] <= *argument[4], false);
+    ASSERT_EQ(*argument[4] <= *argument[3], true);
+    ASSERT_EQ(*argument[3] <= *argument[5], false);
+    ASSERT_EQ(*argument[5] <= *argument[3], true);
+}
+
+TEST_F(BigIntComparison, TestOperatorGreater){
+    ASSERT_EQ(*argument[0] > *argument[0], false);
+    ASSERT_EQ(*argument[3] > *argument[3], false);
+
+    ASSERT_EQ(*argument[3] > *argument[0], false);
+    ASSERT_EQ(*argument[0] > *argument[3], true);
+
+    ASSERT_EQ(*argument[0] > *argument[1], false);
+    ASSERT_EQ(*argument[1] > *argument[0], true);
+    ASSERT_EQ(*argument[0] > *argument[2], false);
+    ASSERT_EQ(*argument[2] > *argument[0], true);
+
+    ASSERT_EQ(*argument[3] > *argument[4], true);
+    ASSERT_EQ(*argument[4] > *argument[3], false);
+    ASSERT_EQ(*argument[3] > *argument[5], true);
+    ASSERT_EQ(*argument[5] > *argument[3], false);
+}
+
+TEST_F(BigIntComparison, TestOperatorGreaterOrEqual){
+    ASSERT_EQ(*argument[0] >= *argument[0], true);
+    ASSERT_EQ(*argument[3] >= *argument[3], true);
+
+    ASSERT_EQ(*argument[3] >= *argument[0], false);
+    ASSERT_EQ(*argument[0] >= *argument[3], true);
+
+    ASSERT_EQ(*argument[0] >= *argument[1], false);
+    ASSERT_EQ(*argument[1] >= *argument[0], true);
+    ASSERT_EQ(*argument[0] >= *argument[2], false);
+    ASSERT_EQ(*argument[2] >= *argument[0], true);
+
+    ASSERT_EQ(*argument[3] >= *argument[4], true);
+    ASSERT_EQ(*argument[4] >= *argument[3], false);
+    ASSERT_EQ(*argument[3] >= *argument[5], true);
+    ASSERT_EQ(*argument[5] >= *argument[3], false);
+}
+
 class BigIntIncrement : public ::testing::TestWithParam<BigIntTestArguments>{};
 
 INSTANTIATE_TEST_SUITE_P(
@@ -193,6 +303,64 @@ TEST_P(BigIntOperatorMul, TestMulAssignment){
 TEST_P(BigIntOperatorMul, TestOperatorMul){
     BigIntTestArguments v = GetParam();
     ASSERT_EQ(v.result, (string)(v.firstArg * v.secondArg));
+}
+
+class BigIntOperatorDiv : public ::testing:: TestWithParam<BigIntTestArguments>{};
+
+INSTANTIATE_TEST_SUITE_P(
+        BigIntTest,
+        BigIntOperatorDiv,
+        ::testing::Values(
+                BigIntTestArguments(BigInt("1274617623764374237478236426"), BigInt("827384728374234"), "1540538010979"),
+                BigIntTestArguments(BigInt("1274617623764374237478236426"), BigInt("2"), "637308811882187118739118213"),
+                BigIntTestArguments(BigInt("2"), BigInt("1274617623764374237478236426"), "0"),
+                BigIntTestArguments(BigInt("0"), BigInt("1274617623764374237478236426"), "0"),
+                BigIntTestArguments(BigInt("1274617623764374237478236426"), BigInt("-827384728374234"), "-1540538010979"),
+                BigIntTestArguments(BigInt("-1274617623764374237478236426"), BigInt("827384728374234"), "-1540538010979"),
+                BigIntTestArguments(BigInt("-1274617623764374237478236426"), BigInt("-827384728374234"), "1540538010979"))
+);
+
+TEST_P(BigIntOperatorDiv, TestDivAssignment){
+    BigIntTestArguments v = GetParam();
+    v.firstArg /= v.secondArg;
+    ASSERT_EQ(v.result, (string)v.firstArg);
+}
+
+TEST_P(BigIntOperatorDiv, TestOperatorDiv){
+    BigIntTestArguments v = GetParam();
+    ASSERT_EQ(v.result, (string)(v.firstArg / v.secondArg));
+}
+
+TEST(BigIntOperatorDiv, TestDivByZero){
+    BigInt v("18741872381273");
+    BigInt zero("0");
+    ASSERT_THROW(v / zero, invalid_argument);
+}
+
+class BigIntOperatorMod : public ::testing:: TestWithParam<BigIntTestArguments>{};
+
+INSTANTIATE_TEST_SUITE_P(
+        BigIntTest,
+        BigIntOperatorMod,
+        ::testing::Values(
+                BigIntTestArguments(BigInt("1274617623764374237478236426"),BigInt("827384728374234"), "331606765521340"),
+                BigIntTestArguments(BigInt("1274617623764374237478236426"),BigInt("2"), "0"),
+                BigIntTestArguments(BigInt("1274617623764374237478236426"),BigInt("10"), "6"),
+                BigIntTestArguments(BigInt("1274617623764374237478236426"),BigInt("10000000000000000000000000000"), "1274617623764374237478236426"),
+                BigIntTestArguments(BigInt("1274617623764374237478236426"),BigInt("-827384728374234"), "331606765521340"),
+                BigIntTestArguments(BigInt("-1274617623764374237478236426"),BigInt("827384728374234"), "331606765521340"),
+                BigIntTestArguments(BigInt("-1274617623764374237478236426"),BigInt("-827384728374234"), "331606765521340"))
+);
+
+TEST_P(BigIntOperatorMod, TestModAssignment){
+    BigIntTestArguments v = GetParam();
+    v.firstArg %= v.secondArg;
+    ASSERT_EQ(v.result, (string)v.firstArg);
+}
+
+TEST_P(BigIntOperatorMod, TestOperatorMod){
+    BigIntTestArguments v = GetParam();
+    ASSERT_EQ(v.result, (string)(v.firstArg % v.secondArg));
 }
 
 int main(){
