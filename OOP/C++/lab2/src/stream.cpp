@@ -33,14 +33,7 @@ void Stream::close() {
 std::ifstream& Stream::getInFile() {
 	return this->input;
 }
-/*
-std::string Stream::getUniverseName() {
-	std::string line;
-	std::getline(input, line); //#N Classic
-	if ((line.size() > 2) && (line[1] == 'N')) {
 
-	}
-
-	
+int Stream::getNumIterat() {
+	return this->numIterat;
 }
-*/
