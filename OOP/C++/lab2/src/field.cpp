@@ -1,7 +1,10 @@
 #include <iostream>
+#include <algorithm>
+#include <string>
+#include <regex>
 #include "life.h"
 
-static int getNumNeighbors(int* field, int pos, int height, int width);
+static int getNumNeighbors(std::vector<int>& field, int pos, int height, int width);
 static bool isSurvived(int numNeighbors, const std::map<int, int>& survivalRules);
 static bool isBorn(int numNeighbors, const std::map<int, int>& birthRules);
 static bool isAlive(int cell);
@@ -9,13 +12,18 @@ static bool isAlive(int cell);
 Field::Field(int height, int width) {
     this->height = height;
     this->width = width;
-    curField = new int[height * width];
-    nextField = new int[height * width];
+    std::vector<int> curField(height * width, 0);
+    std::vector<int> nextField(height * width, 0);
+}
+
+Field::Field(Galaxy& galaxy) {
+    curField = galaxy.getField();
+    nextField = curField;
+    this->height = galaxy.getHeight();
+    this->width = galaxy.getWidth();
 }
 
 Field::~Field() {
-    delete[] curField;
-    delete[] nextField;
 }
 
 int Field::getHeight() {
@@ -26,26 +34,12 @@ int Field::getWidth() {
     return width;
 }
 
-void Field::init() { 
-    for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < width; ++j) {
-            curField[i * height + j] = 0;
-            nextField[i * height + j] = 0;
-        }
-    }
-    curField[0 * height + 2] = 1;
-    curField[1 * height + 2] = 1;
-    curField[1 * height + 0] = 1;
-    curField[2 * height + 2] = 1;
-    curField[2 * height + 1] = 1;
-}
-
 void Field::update(Galaxy& galaxy) {
     const std::map<int, int>& birthRules = galaxy.getBirthRules();
     const std::map<int, int>& survivalRules = galaxy.getSurvivalRules();
     for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
-            int pos = i * height + j;
+            int pos = i * width + j;
             nextField[pos] = getNumNeighbors(curField, pos, height, width);
             bool keepAlive = isSurvived(nextField[pos], survivalRules) && isAlive(curField[pos]);
             bool becameAlive = !isAlive(curField[pos]) && isBorn(nextField[pos], birthRules);
@@ -58,7 +52,7 @@ void Field::update(Galaxy& galaxy) {
 void Field::output() {
     for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
-            std::cout << (curField[i * height + j] == 1 ? "# " : ". ");
+            std::cout << (curField[i * width + j] == 1 ? "# " : ". ");
         }
         std::cout << std::endl;
     }
@@ -85,7 +79,7 @@ bool isAlive(int cell) {
     else return false;
 }
 
-int getUpperNeighbor(int* field, int pos, int height, int width) {
+int getUpperNeighbor(std::vector<int>& field, int pos, int height, int width) {
     if (pos < width) {
         return field[height * width - width + pos];
     }
@@ -94,7 +88,7 @@ int getUpperNeighbor(int* field, int pos, int height, int width) {
     }
 }
 
-int getUpperRightNeighbor(int* field, int pos, int height, int width) {
+int getUpperRightNeighbor(std::vector<int>& field, int pos, int height, int width) {
     if ((pos < width) || ((pos + 1) % width == 0)) {
         return 0;
     }
@@ -103,7 +97,7 @@ int getUpperRightNeighbor(int* field, int pos, int height, int width) {
     }
 }
 
-int getRightNeighbor(int* field, int pos, int height, int width) {
+int getRightNeighbor(std::vector<int>& field, int pos, int height, int width) {
     if ((pos + 1) % width == 0) {
         return field[pos - width + 1];
     }
@@ -112,7 +106,7 @@ int getRightNeighbor(int* field, int pos, int height, int width) {
     }
 }
 
-int getBottomRightNeighbor(int* field, int pos, int height, int width) {
+int getBottomRightNeighbor(std::vector<int>& field, int pos, int height, int width) {
     if (((pos + 1) % width == 0) || (pos >= (height * width - width))) {
         return 0;
     }
@@ -121,7 +115,7 @@ int getBottomRightNeighbor(int* field, int pos, int height, int width) {
     }
 }
 
-int getBottomNeighbor(int* field, int pos, int height, int width) {
+int getBottomNeighbor(std::vector<int>& field, int pos, int height, int width) {
     if (pos >= (height * width - width)) {
         return field[(pos + width) % (width * height)];
     }
@@ -130,7 +124,7 @@ int getBottomNeighbor(int* field, int pos, int height, int width) {
     }
 }
 
-int getBottomLeftNeighbor(int* field, int pos, int height, int width) {
+int getBottomLeftNeighbor(std::vector<int>& field, int pos, int height, int width) {
     if ((pos % width == 0) || (pos >= (height * width - width))) {
         return 0;
     }
@@ -139,7 +133,7 @@ int getBottomLeftNeighbor(int* field, int pos, int height, int width) {
     }
 }
 
-int getLeftNeighbor(int* field, int pos, int height, int width) {
+int getLeftNeighbor(std::vector<int>& field, int pos, int height, int width) {
     if (pos % width == 0) {
         return field[pos + width - 1];
     }
@@ -148,7 +142,7 @@ int getLeftNeighbor(int* field, int pos, int height, int width) {
     }
 }
 
-int getUpperLeftNeighbor(int* field, int pos, int height, int width) {
+int getUpperLeftNeighbor(std::vector<int>& field, int pos, int height, int width) {
     if ((pos % width == 0) || (pos < width)) {
         return 0;
     }
@@ -157,7 +151,7 @@ int getUpperLeftNeighbor(int* field, int pos, int height, int width) {
     }
 }
 
-int getNumNeighbors(int* field, int pos, int height, int width) {
+int getNumNeighbors(std::vector<int>& field, int pos, int height, int width) {
     return getUpperNeighbor(field, pos, height, width) +
          + getUpperRightNeighbor(field, pos, height, width) +
          + getRightNeighbor(field, pos, height, width) +
