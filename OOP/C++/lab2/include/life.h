@@ -28,8 +28,8 @@ public:
     std::string getName();
     const std::map<int, int>& getBirthRules() const;
     const std::map<int, int>& getSurvivalRules() const;
-    std::vector<int> field;
 private:
+    std::vector<int> field;
     std::string name;
     int height;
     int width;
