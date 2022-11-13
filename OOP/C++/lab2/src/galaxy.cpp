@@ -11,6 +11,10 @@ Galaxy::Galaxy():name("Life"), height(100), width(100) {
     //survivalRules.insert(std::pair<int, int>(3, 3));
 }
 
+Galaxy::Galaxy(std::ifstream& input) {
+    parc(input);
+}
+
 std::map<int, int> convertStrToMap(std::string line) {
     std::map<int, int> map;
     for (int i = 0; i < line.size(); ++i) {
@@ -60,12 +64,24 @@ void Galaxy::parcFieldSize(std::string& line, std::ifstream& input) {
     if (std::regex_match(line.c_str(), result, reg)) {
         this->height = convertStrToInt(result[4]);
         this->width = convertStrToInt(result[7]);
-        std::getline(input, line);
     }
     else {
         this->height = 10;
         this->width = 10;
     }
+}
+
+std::vector<int> Galaxy::parcCells(std::string& line, std::ifstream& input) {
+    std::vector<int> field(height * width, 0);
+
+    std::cmatch result;
+    std::regex reg("([0-9]+)( )([0-9]+)");
+    while (std::getline(input, line)) {
+        if (std::regex_match(line.c_str(), result, reg)) {
+            field[convertStrToInt(result[1]) * width + convertStrToInt(result[3])] = 1;
+        }
+    }
+    return field;
 }
 
 void Galaxy::parc(std::ifstream& input) {
@@ -78,34 +94,19 @@ void Galaxy::parc(std::ifstream& input) {
     parcGalaxyName(line, input);
     parcRules(line, input);
     parcFieldSize(line, input);
+    field = parcCells(line, input);
 }
 
-//void Galaxy::parc(std::ifstream& input) {
+std::vector<int>& Galaxy::getField() {
+    return this->field;
+}
+int Galaxy::getHeight() {
+    return this->height;
+}
 
-//    std::cmatch result;
-//
-//    std::getline(input, line); 
-//    std::regex reg("(#N)( )([\\w]+)");
-//    if (std::regex_match(line.c_str(), result, reg)) {
-//        this->name = result[3];
-//    }
-//
-//    std::getline(input, line);
-//    std::regex reg1("(#R)( )(B)([0-8]+)(/)(S)([0-8]+)");
-//    if (std::regex_match(line.c_str(), result, reg1)) {
-//        this->birthRules = convertStrToMap(result[4]);
-//        this->survivalRules = convertStrToMap(result[7]);
-//    }
-//
-//    std::getline(input, line);
-//    std::regex reg2("(#S)( )(M)([0-8]+)(/)(N)([0-8]+)");
-//    if (std::regex_match(line.c_str(), result, reg2)) {
-//        this->height = convertStrToInt(result[4]);
-//        this->width = convertStrToInt(result[7]);
-//    }
-//
-//    
-//}
+int Galaxy::getWidth() {
+    return this->width;
+}
 
 std::string Galaxy::getName() {
     return name;
