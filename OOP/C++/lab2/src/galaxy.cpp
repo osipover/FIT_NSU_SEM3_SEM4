@@ -5,10 +5,7 @@
 #include <regex>
 
 Galaxy::Galaxy():name("Life"), height(100), width(100) {
-    
-    //birthRules.insert(std::pair<int, int>(3, 3));
-    //survivalRules.insert(std::pair<int, int>(2, 2));
-    //survivalRules.insert(std::pair<int, int>(3, 3));
+
 }
 
 Galaxy::Galaxy(std::ifstream& input) {
