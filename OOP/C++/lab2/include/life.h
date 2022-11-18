@@ -3,6 +3,11 @@
 #include <fstream>
 #include <map>
 #include <vector>
+#include <thread>
+#include <chrono>
+#include <regex>
+#include <vector>
+#include <sstream>
 
 class Stream {
 public:
@@ -28,7 +33,8 @@ public:
     std::string getName();
     const std::map<int, int>& getBirthRules() const;
     const std::map<int, int>& getSurvivalRules() const;
-private:
+
+private:    
     std::vector<int> field;
     std::string name;
     int height;
@@ -62,8 +68,7 @@ private:
 class GameControler {
 private:
 public:
-    void start() {
-    }
+    void start(Field& field, Galaxy& galaxy);
 };
 
 #endif //LAB2_LIFE_H
