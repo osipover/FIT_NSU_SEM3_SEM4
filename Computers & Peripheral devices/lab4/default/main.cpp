@@ -21,14 +21,9 @@ int main() {
 	std::ifstream input;
 	input.open("matrix.txt");
 	if (input.is_open()) {
-		Matrix A(3);
-		A.init(input);		
-		A.output();
-		std::cout << std::endl;
-
-		Matrix I = A.invert(2000000);
-		Matrix R = I*A;
-		R.output();
+		Matrix A(SIZE);
+		A.init(input);
+		Matrix I = A.invert(10);
 	}
 
 	return 0;
