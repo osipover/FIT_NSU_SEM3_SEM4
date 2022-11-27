@@ -5,17 +5,17 @@
 #include <string>
 #include <vector>
 enum {BASE = 1000000000};
-using namespace std;
 
 class BigInt{
 public:
     BigInt();
     explicit BigInt(int);
-    explicit BigInt(string);
-
-    BigInt operator~() const;
-
+    explicit BigInt(std::string);
+    BigInt(const BigInt&);
+    BigInt(BigInt&&);
+    
     BigInt& operator=(const BigInt&);
+    BigInt& operator=(BigInt&&);
 
     BigInt operator+() const;
     BigInt operator-() const;
@@ -30,7 +30,8 @@ public:
     BigInt& operator*=(const BigInt&);
     BigInt& operator/=(const BigInt&);
     BigInt& operator%=(const BigInt&);
-
+    
+    BigInt operator~() const;
     BigInt& operator&=(const BigInt&);
     BigInt& operator|=(const BigInt&);
     BigInt& operator^=(const BigInt&);
@@ -43,17 +44,18 @@ public:
     bool operator>=(const BigInt&) const;
 
     explicit operator int() const;
-    explicit operator string() const;
+    explicit operator std::string() const;
 
     size_t size() const;
 
-    friend ostream& operator<<(ostream&, const BigInt&);
+    friend std::ostream& operator<<(std::ostream&, const BigInt&);
 
     bool operator>(const int&) const;
     BigInt& operator+=(const int&);
     BigInt& operator/=(const int&);
+    int* getVectorPointer();
 private:
-    vector<int> data;
+    std::vector<int> data;
     bool sign;
     bool isZero(const BigInt&);
 };
@@ -70,7 +72,7 @@ BigInt operator&(const BigInt& left, const BigInt& right);
 BigInt operator|(const BigInt& left, const BigInt& right);
 BigInt operator^(const BigInt& left, const BigInt& right);
 
-ostream& operator<<(ostream&, const BigInt&);
+std::ostream& operator<<(std::ostream&, const BigInt&);
 
 BigInt operator*(const BigInt& left, const int& right);
 BigInt operator%(const BigInt& left, const int&);
