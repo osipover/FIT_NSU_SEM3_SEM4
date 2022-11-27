@@ -1,17 +1,18 @@
 #include <iostream>
 #include <utility>
 #include "BigInt.h"
+#include <fstream>
 #include <gtest/gtest.h>
 
 class BigIntTestArguments{
 public:
-    BigIntTestArguments(BigInt firstArg, string result):
+    BigIntTestArguments(BigInt firstArg, std::string result):
         firstArg(firstArg), secondArg(BigInt(0)), result(std::move(result)){}
-    BigIntTestArguments(BigInt firstArg, BigInt secondArg, string result):
+    BigIntTestArguments(BigInt firstArg, BigInt secondArg, std::string result):
         firstArg(firstArg), secondArg(secondArg), result(std::move(result)){}
     BigInt firstArg;
     BigInt secondArg;
-    string result;
+    std::string result;
 };
 
 TEST(BigIntTest, TestConstructorInt){
@@ -19,10 +20,12 @@ TEST(BigIntTest, TestConstructorInt){
     BigInt v2(-999999999);
     BigInt v3(2147483647);
     BigInt v4(-2147483648);
-    ASSERT_EQ("0", (string)v1);
-    ASSERT_EQ("-999999999", (string)v2);
-    ASSERT_EQ("2147483647", (string)v3);
-    ASSERT_EQ("-2147483648", (string)v4);
+    BigInt v5;
+    ASSERT_EQ("0", (std::string)v1);
+    ASSERT_EQ("-999999999", (std::string)v2);
+    ASSERT_EQ("2147483647", (std::string)v3);
+    ASSERT_EQ("-2147483648", (std::string)v4);
+    ASSERT_EQ("0", (std::string)v5);
 };
 
 TEST(BigIntTest, TestConstructorString){
@@ -30,11 +33,11 @@ TEST(BigIntTest, TestConstructorString){
     BigInt v2("-12345678987654321");
     BigInt v3("00000000000000000001");
     BigInt v4("-00000000");
-    ASSERT_EQ("12345678987654321", (string)v1);
-    ASSERT_EQ("-12345678987654321", (string)v2);
-    ASSERT_EQ("1", (string)v3);
-    ASSERT_EQ("0", (string)v4);
-    ASSERT_THROW({BigInt v("123error456");}, invalid_argument);
+    ASSERT_EQ("12345678987654321", (std::string)v1);
+    ASSERT_EQ("-12345678987654321", (std::string)v2);
+    ASSERT_EQ("1", (std::string)v3);
+    ASSERT_EQ("0", (std::string)v4);
+    ASSERT_THROW({BigInt v("123error456");}, std::invalid_argument);
 }
 
 TEST(BigIntTest, TestAssignment){
@@ -55,17 +58,19 @@ TEST(BigIntTest, TestSize){
 TEST(BigIntTest, TestIntConversion){
     BigInt v1(-12345);
     BigInt v2(2147483647);
+    BigInt v3(-2147483648);
     ASSERT_EQ(-12345, (int)v1);
     ASSERT_EQ(2147483647, (int)v2);
+    ASSERT_EQ(-2147483648, (int)v3);
 }
 
 TEST(BigIntTest, TestOperatorNOT){
     BigInt v1(2147483647);
     BigInt v2("-2147483648");
     BigInt v3(0);
-    ASSERT_EQ("-2147483648", (string)~v1);
-    ASSERT_EQ("2147483647", (string)~v2);
-    ASSERT_EQ("-1", (string)~v3);
+    ASSERT_EQ("-2147483648", (std::string)~v1);
+    ASSERT_EQ("2147483647", (std::string)~v2);
+    ASSERT_EQ("-1", (std::string)~v3);
 }
 
 class BigIntComparison : public ::testing::Test{
@@ -80,7 +85,7 @@ protected:
         argument[4] = new BigInt("-1234163271623473642341223443");
         argument[5] = new BigInt("-98765432123456789");
     }
-    void TearDown(){
+    void TearDown() {
         delete argument[0];
         delete argument[1];
         delete argument[2];
@@ -178,6 +183,22 @@ TEST_F(BigIntComparison, TestOperatorGREATER_OR_EQUAL){
     ASSERT_EQ(*argument[5] >= *argument[3], false);
 }
 
+TEST(BigIntOperatorUNARY, TestOperatorUNARY_PLUS){
+    BigInt v1("123412634817635481763254");
+    BigInt v2("-23482739842398429384234");
+    ASSERT_EQ("123412634817635481763254", (std::string)v1);
+    ASSERT_EQ("-23482739842398429384234", (std::string)v2);
+}
+
+TEST(BigIntOperatorUNARY, TestOperatorUNARY_MINUS){
+    BigInt v1("123412634817635481763254");
+    BigInt v2("-23482739842398429384234");
+    BigInt v3("0");
+    ASSERT_EQ("-123412634817635481763254", (std::string)(-v1));
+    ASSERT_EQ("23482739842398429384234", (std::string)(-v2));
+    ASSERT_EQ("0", (std::string)(-v3));
+}
+
 class BigIntIncrement : public ::testing::TestWithParam<BigIntTestArguments>{};
 
 INSTANTIATE_TEST_SUITE_P(
@@ -193,13 +214,13 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(BigIntIncrement, TestPostfixIncrement){
     BigIntTestArguments v = GetParam();
     v.firstArg++;
-    ASSERT_EQ(v.result, (string) v.firstArg);
+    ASSERT_EQ(v.result, (std::string) v.firstArg);
 }
 
 TEST_P(BigIntIncrement, TestPrefixIncrement){
     BigIntTestArguments v = GetParam();
     ++v.firstArg;
-    ASSERT_EQ(v.result, (string) v.firstArg);
+    ASSERT_EQ(v.result, (std::string) v.firstArg);
 }
 
 class BigIntDecrement : public ::testing::TestWithParam<BigIntTestArguments>{};
@@ -217,13 +238,13 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(BigIntDecrement, TestPostfixDecrement){
     BigIntTestArguments v = GetParam();
     v.firstArg--;
-    ASSERT_EQ(v.result, (string)v.firstArg);
+    ASSERT_EQ(v.result, (std::string)v.firstArg);
 }
 
 TEST_P(BigIntDecrement, TestPrefixDecrement){
     BigIntTestArguments v = GetParam();
     --v.firstArg;
-    ASSERT_EQ(v.result, (string)v.firstArg);
+    ASSERT_EQ(v.result, (std::string)v.firstArg);
 }
 
 class BigIntOperatorADD : public ::testing::TestWithParam<BigIntTestArguments>{};
@@ -244,12 +265,12 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(BigIntOperatorADD, TestAssignmentADD){
     BigIntTestArguments v = GetParam();
     v.firstArg += v.secondArg;
-    ASSERT_EQ(v.result, (string)v.firstArg);
+    ASSERT_EQ(v.result, (std::string)v.firstArg);
 }
 
 TEST_P(BigIntOperatorADD, TestOperatorADD){
     BigIntTestArguments v = GetParam();
-    ASSERT_EQ(v.result, (string)(v.firstArg + v.secondArg));
+    ASSERT_EQ(v.result, (std::string)(v.firstArg + v.secondArg));
 }
 
 class BigIntOperatorSUB : public ::testing:: TestWithParam<BigIntTestArguments>{};
@@ -272,12 +293,12 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(BigIntOperatorSUB, TestAssignmentSUB){
     BigIntTestArguments v = GetParam();
     v.firstArg -= v.secondArg;
-    ASSERT_EQ(v.result, (string)v.firstArg);
+    ASSERT_EQ(v.result, (std::string)v.firstArg);
 }
 
 TEST_P(BigIntOperatorSUB, TestOperatorSUB){
     BigIntTestArguments v = GetParam();
-    ASSERT_EQ(v.result, (string)(v.firstArg - v.secondArg));
+    ASSERT_EQ(v.result, (std::string)(v.firstArg - v.secondArg));
 }
 
 class BigIntOperatorMUL : public ::testing:: TestWithParam<BigIntTestArguments>{};
@@ -297,12 +318,12 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(BigIntOperatorMUL, TestAssignmentMUL){
     BigIntTestArguments v = GetParam();
     v.firstArg *= v.secondArg;
-    ASSERT_EQ(v.result, (string)v.firstArg);
+    ASSERT_EQ(v.result, (std::string)v.firstArg);
 }
 
 TEST_P(BigIntOperatorMUL, TestOperatorMUL){
     BigIntTestArguments v = GetParam();
-    ASSERT_EQ(v.result, (string)(v.firstArg * v.secondArg));
+    ASSERT_EQ(v.result, (std::string)(v.firstArg * v.secondArg));
 }
 
 class BigIntOperatorDIV : public ::testing:: TestWithParam<BigIntTestArguments>{};
@@ -323,18 +344,18 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(BigIntOperatorDIV, TestAssignmentDIV){
     BigIntTestArguments v = GetParam();
     v.firstArg /= v.secondArg;
-    ASSERT_EQ(v.result, (string)v.firstArg);
+    ASSERT_EQ(v.result, (std::string)v.firstArg);
 }
 
 TEST_P(BigIntOperatorDIV, TestOperatorDIV){
     BigIntTestArguments v = GetParam();
-    ASSERT_EQ(v.result, (string)(v.firstArg / v.secondArg));
+    ASSERT_EQ(v.result, (std::string)(v.firstArg / v.secondArg));
 }
 
 TEST(BigIntOperatorDIV, TestDivByZero){
     BigInt v("18741872381273");
     BigInt zero("0");
-    ASSERT_THROW(v / zero, invalid_argument);
+    ASSERT_THROW(v / zero, std::invalid_argument);
 }
 
 class BigIntOperatorMOD : public ::testing:: TestWithParam<BigIntTestArguments>{};
@@ -345,7 +366,7 @@ INSTANTIATE_TEST_SUITE_P(
         ::testing::Values(
                 BigIntTestArguments(BigInt("1274617623764374237478236426"),BigInt("827384728374234"), "331606765521340"),
                 BigIntTestArguments(BigInt("1274617623764374237478236426"),BigInt("2"), "0"),
-                BigIntTestArguments(BigInt("1274617623764374237478236426"),BigInt("10"), "6"),
+                BigIntTestArguments(BigInt("1274617623764374237478236425"),BigInt("10"), "5"),
                 BigIntTestArguments(BigInt("1274617623764374237478236426"),BigInt("10000000000000000000000000000"), "1274617623764374237478236426"),
                 BigIntTestArguments(BigInt("1274617623764374237478236426"),BigInt("-827384728374234"), "331606765521340"),
                 BigIntTestArguments(BigInt("-1274617623764374237478236426"),BigInt("827384728374234"), "331606765521340"),
@@ -355,12 +376,12 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(BigIntOperatorMOD, TestAssignmentMOD){
     BigIntTestArguments v = GetParam();
     v.firstArg %= v.secondArg;
-    ASSERT_EQ(v.result, (string)v.firstArg);
+    ASSERT_EQ(v.result, (std::string)v.firstArg);
 }
 
 TEST_P(BigIntOperatorMOD, TestOperatorMOD){
     BigIntTestArguments v = GetParam();
-    ASSERT_EQ(v.result, (string)(v.firstArg % v.secondArg));
+    ASSERT_EQ(v.result, (std::string)(v.firstArg % v.secondArg));
 }
 
 class BigIntOperatorAND : public ::testing:: TestWithParam<BigIntTestArguments>{};
@@ -380,12 +401,12 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(BigIntOperatorAND, TestAssignmentAND){
     BigIntTestArguments v = GetParam();
     v.firstArg &= v.secondArg;
-    ASSERT_EQ(v.result, (string)v.firstArg);
+    ASSERT_EQ(v.result, (std::string)v.firstArg);
 }
 
 TEST_P(BigIntOperatorAND, TestOperatorAND){
     BigIntTestArguments v = GetParam();
-    ASSERT_EQ(v.result, (string)(v.firstArg & v.secondArg));
+    ASSERT_EQ(v.result, (std::string)(v.firstArg & v.secondArg));
 }
 
 class BigIntOperatorOR : public ::testing:: TestWithParam<BigIntTestArguments>{};
@@ -405,12 +426,12 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(BigIntOperatorOR, TestAssignmentOR){
     BigIntTestArguments v = GetParam();
     v.firstArg |= v.secondArg;
-    ASSERT_EQ(v.result, (string)v.firstArg);
+    ASSERT_EQ(v.result, (std::string)v.firstArg);
 }
 
 TEST_P(BigIntOperatorOR, TestOperatorOR){
     BigIntTestArguments v = GetParam();
-    ASSERT_EQ(v.result, (string)(v.firstArg | v.secondArg));
+    ASSERT_EQ(v.result, (std::string)(v.firstArg | v.secondArg));
 }
 
 class BigIntOperatorXOR : public ::testing:: TestWithParam<BigIntTestArguments>{};
@@ -430,12 +451,44 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(BigIntOperatorXOR, TestAssignmentXOR){
     BigIntTestArguments v = GetParam();
     v.firstArg ^= v.secondArg;
-    ASSERT_EQ(v.result, (string)v.firstArg);
+    ASSERT_EQ(v.result, (std::string)v.firstArg);
 }
 
 TEST_P(BigIntOperatorXOR, TestOperatorXOR){
     BigIntTestArguments v = GetParam();
-    ASSERT_EQ(v.result, (string)(v.firstArg ^ v.secondArg));
+    ASSERT_EQ(v.result, (std::string)(v.firstArg ^ v.secondArg));
+}
+
+TEST(BigIntMoveOperator, TestMoveConstructor1){
+    BigInt v1("12345678987654321");
+    int* pv1 = v1.getVectorPointer();
+    BigInt v2(std::move(v1));
+    int* pv2 = v2.getVectorPointer();
+
+    BigInt v3(0);
+    int* pv3 = v3.getVectorPointer();
+    BigInt v4(std::move(v3));
+    int* pv4 = v4.getVectorPointer();
+
+    ASSERT_EQ(pv1, pv2);
+    ASSERT_EQ(pv3, pv4);
+    ASSERT_NE(pv1, v1.getVectorPointer());
+}
+
+TEST(BigIntMoveOperator, TestMoveAssignment){
+    BigInt v1("12345678987654321");
+    int* pv1 = v1.getVectorPointer();
+    BigInt v2 = std::move(v1);
+    int* pv2 = v2.getVectorPointer();
+
+    BigInt v3(0);
+    int* pv3 = v3.getVectorPointer();
+    BigInt v4 = std::move(v3);
+    int* pv4 = v4.getVectorPointer();
+
+    ASSERT_EQ(pv1, pv2);
+    ASSERT_EQ(pv3, pv4);
+    ASSERT_NE(pv1, v1.getVectorPointer());
 }
 
 int main(){
