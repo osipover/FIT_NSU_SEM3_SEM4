@@ -3,12 +3,18 @@
 #include "life.h"
 
 int main(int argc, char* argv[]) {
-    Stream stream(argc, argv);
-    Galaxy galaxy(stream.getInFile());
-    Field field(galaxy);
-
-    GameControler game;
-    game.start(field, galaxy);
-    
-    return 0;
+    try {
+        Pars pars;
+        pars.commandLine(argc, argv);
+        Galaxy galaxy;
+        pars.getInput() >> galaxy;
+        Field field(galaxy);
+        Game game;
+        game.start(field, galaxy);    
+        return 0;
+    }
+    catch (std::exception& ex) {
+        std::cout << ex.what() << std::endl;
+        return 1;
+    }
 }
