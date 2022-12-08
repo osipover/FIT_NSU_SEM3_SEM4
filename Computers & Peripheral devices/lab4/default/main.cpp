@@ -9,7 +9,6 @@ class Matrix {
 public:
 	Matrix();
 	Matrix(int N);
-	Matrix(int N, std::ifstream& input);
 	void init(std::ifstream& input);
 	void output();
 	int getN();
@@ -40,17 +39,6 @@ Matrix::Matrix(int N) : N(N) {
 			matrix[i * N + j] = 0;
 		}
 	}
-}
-
-Matrix::Matrix(int N, std::ifstream& input) : N(N) {
-	matrix = new float[N * N];
-	for (int i = 0; i < N; ++i) {
-		for (int j = 0; j < N; ++j) {
-			float value;
-			input >> matrix[i * N + j];
-		}
-	}
-	std::cout << "Matrix A is initialized\n";
 }
 
 int Matrix::getN() {
