@@ -5,13 +5,15 @@
 #include <regex>
 #include "commands.h"
 
-static int convertStrToInt(std::string line) {
-    int value = 0, pow = 1;
-    for (int i = line.length() - 1; i >= 0; --i) {
-        value = pow * (line[i] - '0') + value;
-        pow *= 10;
+namespace {
+    int convertStrToInt(std::string line) {
+        int value = 0, pow = 1;
+        for (int i = line.length() - 1; i >= 0; --i) {
+            value = pow * (line[i] - '0') + value;
+            pow *= 10;
+        }
+        return value;
     }
-    return value;
 }
 
 int Exit::execute(Field& field, Galaxy& galaxy, std::vector<std::string> args) {
