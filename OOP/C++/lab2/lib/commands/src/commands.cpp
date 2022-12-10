@@ -4,8 +4,6 @@
 #include <chrono>
 #include <regex>
 #include "commands.h"
-#include "field.h"
-#include "galaxy.h"
 
 std::vector<std::string> split(const std::string& line, char dev) {
     std::vector<std::string> args;
@@ -72,17 +70,36 @@ int Tick::execute(Field& field, Galaxy& galaxy, std::vector<std::string> args) {
     return 2;
 }
 
+void Play::outputField(Field& field) {
+    for (int i = 0; i < field.getSize(); ++i) {
+        for (int j = 0; j < field.getSize(); ++j) {
+            std::cout << (field.getCell(i, j) == true ? "# " : ". ");
+        }
+        std::cout << std::endl;
+    }
+}
+
 int Play::execute(Field& field, Galaxy& galaxy, std::vector<std::string> args) {
     int numIterat = convertStrToInt(args[1]);        
     while (numIterat > 0) {
         system("cls");        
         field.update(galaxy);
-        field.output();
+        outputField(field);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         numIterat--;
     }
 
     return 3;
+}
+
+void Dump::outputField(std::ofstream& output, Field& field) {
+    for (int i = 0; i < field.getSize(); ++i) {
+        for (int j = 0; j < field.getSize(); ++j) {
+            if (field.getCell(i, j) == true) {
+                output << i << " " << j << std::endl;
+            }
+        }
+    }
 }
 
 int Dump::execute(Field& field, Galaxy& galaxy, std::vector<std::string> args) {
@@ -95,10 +112,11 @@ int Dump::execute(Field& field, Galaxy& galaxy, std::vector<std::string> args) {
             output << "#Life 1.06\n";
             output << "#N " << galaxy.getName() << std::endl;
             output << "#R " << galaxy.getRules().output() << std::endl;
-            output << "#S " << "H" << galaxy.getHeight() << "/W" << galaxy.getWidth() << std::endl;
-            field.output(output);
+            output << "#S " << galaxy.getSize() << std::endl;
+            outputField(output, field);
         }
-        throw CommandExceptions("I can't open this file. Try again.");
+        else 
+            throw CommandExceptions("I can't open this file. Try again.");
     }
     else {
         throw CommandExceptions("File has to be with \"txt\" format. Try again.");
