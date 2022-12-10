@@ -1,6 +1,5 @@
 #pragma once
 #include "life.h"
-#include <memory>
 
 class ICommand {
 public:
@@ -25,50 +24,49 @@ public:
 class Play : public ICommand {
 public:
 	int execute(Field& field, Galaxy& galaxy, std::vector<std::string> args) override;
+private:
+	void outputField(Field& field);
 };
 
 class Dump : public ICommand {
 public:
 	int execute(Field& field, Galaxy& galaxy, std::vector<std::string> args) override;
+private:
+	void outputField(std::ofstream&,Field&);
 };
 
 class ICommandCreator {
-public:
-	virtual std::unique_ptr<ICommand> create() = 0;
+public: 
+	virtual ICommand* create() = 0;
 };
 
 class ExitCreator : public ICommandCreator {
-	std::unique_ptr<ICommand> create() override {
-		auto ptr = std::unique_ptr<ICommand>{ new Exit };
-		return ptr;
+	ICommand* create() override {
+		return new Exit;
 	}
 };
 
 class HelpCreator : public ICommandCreator{
-	std::unique_ptr<ICommand> create() override {
-		auto ptr = std::unique_ptr<ICommand>{ new Help };
-		return ptr;
+	ICommand* create() override {
+		return new Help;
 	}
 };
 
 class TickCreator : public ICommandCreator {
-	std::unique_ptr<ICommand> create() override {
-		auto ptr = std::unique_ptr<ICommand>{ new Tick };
-		return ptr;
+	ICommand* create() override {
+		return new Tick;
 	}
 };
 
 class PlayCreator : public ICommandCreator {
-	std::unique_ptr<ICommand> create() override {
-		auto ptr = std::unique_ptr<ICommand>{ new Play };
-		return ptr;
+	ICommand* create() override {
+		return new Play;
 	}
 };
 
 class DumpCreator : public ICommandCreator {
-	std::unique_ptr<ICommand> create() override {
-		auto ptr = std::unique_ptr<ICommand>{ new Dump };
-		return ptr;
+	ICommand* create() override {
+		return new Dump;
 	}
 };
 
@@ -80,4 +78,3 @@ public:
 	CommandExceptions(const char* msg) :std::exception(msg) {}
 private:
 };
-
