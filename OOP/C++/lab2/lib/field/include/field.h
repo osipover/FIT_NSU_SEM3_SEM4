@@ -1,21 +1,18 @@
 #pragma once
 #include <vector>
 #include <fstream>
-#include "galaxy.h"
+#include "life.h"
 
 class Field {
 public:
-    Field() : height(0), width(0) {};
+    Field() : size(0) {};
     Field(Galaxy&);
     ~Field();
-    int getHeight();
-    int getWidth();
+    bool getCell(int i, int j) const;
+    int getSize();
     void update(Galaxy& galaxy);
-    void output();
-    void output(std::ofstream& output);
 private:
-    int height;
-    int width;
+    int size;
     std::vector<bool> curField;
     std::vector<bool> nextField;
 };
