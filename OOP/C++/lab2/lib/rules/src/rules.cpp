@@ -1,11 +1,13 @@
 #include "rules.h"
 
-std::map<int, char> convertStrToMap(std::string line) {
-    std::map<int, char> map;
-    for (int i = 0; i < line.size(); ++i) {
-        map.insert(std::pair<int, int>(line[i] - '0', line[i]));
+namespace {
+    std::map<int, char> convertStrToMap(std::string line) {
+        std::map<int, char> map;
+        for (int i = 0; i < line.size(); ++i) {
+            map.insert(std::pair<int, int>(line[i] - '0', line[i]));
+        }
+        return map;
     }
-    return map;
 }
 
 void Rules::setBirthRules(std::string line) {
