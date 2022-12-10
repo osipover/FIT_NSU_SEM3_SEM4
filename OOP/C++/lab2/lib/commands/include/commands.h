@@ -19,6 +19,8 @@ public:
 class Tick : public ICommand {
 public:
 	int execute(Field& field, Galaxy& galaxy, std::vector<std::string> args) override;
+private:
+	void outputField(Field& field);
 };
 
 class Play : public ICommand {
@@ -69,9 +71,6 @@ class DumpCreator : public ICommandCreator {
 		return new Dump;
 	}
 };
-
-std::vector<std::string> split(const std::string& line, char dev);
-std::map<std::string, std::unique_ptr<ICommand>> createCommandList();
 
 class CommandExceptions : public std::exception {
 public:
