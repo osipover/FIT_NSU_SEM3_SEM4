@@ -1,12 +1,15 @@
 #include <cstdlib>
 #include <iostream>
 #include <stdint.h>
+#include <limits.h>
 #include <fstream>
 #include "matrix.h" 
 
 #define N_MIN 256
 #define N_MAX 8388608
 #define K 5
+#define STEP 1.2
+#define ATTEMPTS 5
 
 uint64_t GetTSC() {
 	uint64_t highPart, lowPart;
@@ -83,22 +86,25 @@ void WarmCache(int* arr, int size) {
 }
 
 uint64_t GetTestResults(int* arr, int size) {
+	uint64_t start, end;
+	uint64_t accessTime = 0, minAccessTime = INT_MAX;
+
 	WarmCPU();
 	WarmCache(arr, size);
-
-	uint64_t start, end;
-	int k = 0;
-
-	start = GetTSC();
-	for (int i = 0; i < size * K; ++i) {
+	
+	for (int count = 0; count < ATTEMPTS; ++count){
+	    int k = 0;
+	    start = GetTSC();
+	    for (int i = 0; i < size * K; ++i){
 		k = arr[k];
+	    }
+	    end = GetTSC();
+	    if (k == 12345) std::cout << "Wow!";
+	    accessTime = (end - start)/(size * K);
+	    if (accessTime < minAccessTime) minAccessTime = accessTime;
 	}
-	end = GetTSC();
-	if (k == 12345) std::cout << "Wow!";
-
-	uint64_t accessTime = (end - start)/(size *(uint64_t) K);
 	delete [] arr;
-	return accessTime;
+	return minAccessTime;
 }
 
 int main() {
@@ -111,17 +117,16 @@ int main() {
 		output << N * sizeof(int) << ";";
 
 		int* arr = GetDirectElem(N);
-		output << GetTestResults(arr, N);
-		output << ";";
+		output << GetTestResults(arr, N) << ";";
 		
 		arr = GetBackElem(N);
-		output << GetTestResults(arr, N);
-		output << ";";
+		output << GetTestResults(arr, N) << ";";
 
 		arr = GetRandElem(N);
-		output << GetTestResults(arr, N);
-		output << ";\n";
-		N *= 1.2;
+		output << GetTestResults(arr, N) << ";\n";
+
+		N *= STEP;
 	}
+	output.close();
 	return 0;
 }
