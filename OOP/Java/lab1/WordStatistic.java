@@ -1,36 +1,28 @@
-import java.util.Objects;
-
-public class WordStatistic implements Comparable<WordStatistic> {
-    public WordStatistic(String word){
+public class WordStatistic {
+    public WordStatistic (String word, int numInclusion){
         this.word = word;
-        numInclusion = 1;
+        this.numInclusion = numInclusion;
     }
 
-    @Override
-    public boolean equals(Object o){
-        if (this == o) return true;
-        if ((o == null) || (this.getClass() != o.getClass())) return false;
-        WordStatistic other = (WordStatistic) o;
-        return this.word.equals(other.word);
+    public String getWord(){
+        return this.word;
     }
 
-    @Override
-    public int hashCode(){
+    public int getNumInclusion(){
         return this.numInclusion;
     }
 
     @Override
-    public String toString() {
-        return this.word + this.numInclusion;
+    public String toString(){
+        return word + ";" + numInclusion + ";" + percentOfAllWords() + "%";
     }
 
-    @Override
-    public int compareTo(WordStatistic cell){
-        if (this.hashCode() > cell.hashCode()) return 1;
-        if (Objects.equals(this.word, cell.word)) return 0;
-        else return -1;
+    private double percentOfAllWords(){
+        double percent = ((double)numInclusion/totalCount) * 100;
+        return (double)((int)(percent * 100))/100;
     }
 
+    public static int totalCount = 0;
     private String word;
-    public int numInclusion;
+    private int numInclusion;
 }
