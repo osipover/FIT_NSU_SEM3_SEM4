@@ -1,22 +1,16 @@
-import java.io.IOException;
-import java.io.Reader;
-import java.io.InputStreamReader;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 
 public class Main {
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         Reader reader = null;
         try {
             reader = new InputStreamReader(new FileInputStream("test.txt"));
-            Parser parser = new Parser(reader);
-            WordTable wordTable = new WordTable();
-            while (reader.ready()) {
-                WordStatistic cell = new WordStatistic(parser.getNextWord());
-                wordTable.add(cell);
-            }
-            System.out.println(wordTable);
+            WordTable wordTable = new WordTable(reader);
+            CSVGenerator csvGenerator = new CSVGenerator("output.csv");
+            csvGenerator.write(wordTable);
         }
         catch(IOException ex){
             System.out.println(ex.getMessage());
