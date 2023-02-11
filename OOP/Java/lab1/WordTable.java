@@ -1,26 +1,41 @@
-import java.util.TreeSet;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Map;
 
 public class WordTable {
-    public WordTable(){
-        this.table = new TreeSet<WordStatistic>();
-    }
-  
-    public void add(WordStatistic cell){
-        WordStatistic curCell = table.ceiling(cell);
-        if ((curCell == null) || (!curCell.equals(cell))) {
-            table.add(cell);
-        }
-        else{
-            cell.numInclusion = curCell.numInclusion + 1;
-            table.remove(curCell);
-            table.add(cell);
+    public WordTable(Reader reader) throws IOException{
+        wordTable = new HashMap<String, Integer>();
+        FileParser parser = new FileParser(reader);
+        while(reader.ready()) {
+            String word = parser.getNextWord();
+            if (wordTable.containsKey(word))
+                wordTable.replace(word, wordTable.get(word) + 1);
+            else
+                wordTable.put(word, 1);
         }
     }
-  
-    @Override
-    public String toString(){
-        return table.toString();
+
+    public ArrayList<WordStatistic> sort(){
+        var sortedTable = new ArrayList<WordStatistic>();
+        for (Map.Entry<String, Integer> pair : wordTable.entrySet()){
+            WordStatistic cell = new WordStatistic(pair.getKey(), pair.getValue());
+            WordStatistic.totalCount++;
+            sortedTable.add(cell);
+        }
+        sortedTable.sort(new CompareCells());
+        return sortedTable;
     }
-  
-    private TreeSet<WordStatistic> table;
+
+    HashMap<String, Integer> wordTable;
 }
+
+class CompareCells implements Comparator<WordStatistic> {
+    @Override
+    public int compare(WordStatistic cell1, WordStatistic cell2){
+        return cell2.getNumInclusion() - cell1.getNumInclusion();
+    }
+}
+
