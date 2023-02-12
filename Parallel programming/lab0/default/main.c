@@ -45,9 +45,14 @@ long long CalcS(int* a, int* b, int N) {
 int main() {
 	int* a = InitA(SIZE);
 	int* b = InitB(SIZE);
-
+	
+	time_t start, end;
+	time(&start);
 	long long s = CalcS(a, b, SIZE);
+	time(&end);
+
 	printf("%lld\n", s);
+	printf("Time: %f sec\n", difftime(end, start));
 
 	free(a);
 	free(b);
