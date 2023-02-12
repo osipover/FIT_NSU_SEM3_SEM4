@@ -48,17 +48,15 @@ int main(int argc, char** argv) {
 		InitArray(array1, curArraySize, numProc);
 		InitArray(array2, curArraySize, numProc);
 
-		int shift = 0;
-		long long sBuffer = 0;
-
 		double start, end;
 		start = MPI_Wtime();
+		int shift = 0;
 		for (int i = 1; i < numProc; ++i) {
 			MPI_Send(array1 + shift, bufferSize, MPI_INT, i, ID, MPI_COMM_WORLD);
 			MPI_Send(array2, SIZE, MPI_INT, i, ID, MPI_COMM_WORLD);
 			shift += bufferSize;
 		}
-
+		long long sBuffer = 0;
 		for (int i = 1; i < numProc; ++i) {
 			MPI_Recv(&sBuffer, 1, MPI_LONG_LONG, MPI_ANY_SOURCE, ID, MPI_COMM_WORLD, &status);
 			s += sBuffer;
@@ -74,11 +72,8 @@ int main(int argc, char** argv) {
 		s = Mult(array1, bufferSize, array2, SIZE);
 		MPI_Send(&s, 1, MPI_LONG_LONG, 0, ID, MPI_COMM_WORLD);
 	}
-
 	free(array1);
 	free(array2);
-
 	MPI_Finalize();
-	
 	return 0;
 }
