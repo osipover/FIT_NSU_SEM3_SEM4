@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "mpi.h"
-#define SIZE 100
+#define SIZE 100000
 #define ID 1
 
 int CalcCurrentArraySize(int numProc) {
@@ -56,10 +56,12 @@ int main(int argc, char** argv) {
 		for (int i = 1; i < numProc; ++i) {
 			MPI_Send(array1 + shift, bufferSize, MPI_INT, i, ID, MPI_COMM_WORLD);
 			MPI_Send(array2, SIZE, MPI_INT, i, ID, MPI_COMM_WORLD);
-
-			MPI_Recv(&sBuffer, 1, MPI_LONG_LONG, i, ID, MPI_COMM_WORLD, &status);
-			s += sBuffer;
 			shift += bufferSize;
+		}
+
+		for (int i = 1; i < numProc; ++i) {
+			MPI_Recv(&sBuffer, 1, MPI_LONG_LONG, MPI_ANY_SOURCE, ID, MPI_COMM_WORLD, &status);
+			s += sBuffer;
 		}
 		end = MPI_Wtime();
 
@@ -73,9 +75,10 @@ int main(int argc, char** argv) {
 		MPI_Send(&s, 1, MPI_LONG_LONG, 0, ID, MPI_COMM_WORLD);
 	}
 
-	MPI_Finalize();
-	
 	free(array1);
 	free(array2);
+
+	MPI_Finalize();
+	
 	return 0;
 }
