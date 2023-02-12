@@ -20,21 +20,6 @@ void InitArray(int* arr, int curArraySize, int numProc) {
 	}
 }
 
-long long CalcS(int *array1, int *array2, int numProc, int bufferSize, MPI_Status *status) {
-	long long s = 0;
-	int shift = 0;
-	long long sBuffer = 0;
-	for (int i = 1; i < numProc; ++i) {
-		MPI_Send(array1 + shift, bufferSize, MPI_INT, i, ID, MPI_COMM_WORLD);
-		MPI_Send(array2, SIZE, MPI_INT, i, ID, MPI_COMM_WORLD);
-
-		MPI_Recv(&sBuffer, 1, MPI_LONG_LONG, i, ID, MPI_COMM_WORLD, status);
-		s += sBuffer;
-		shift += bufferSize;
-	}
-	return s;
-}
-
 long long Mult(int* a, int sizeA, int* b, int sizeB) {
 	long long result = 0;
 	for (int i = 0; i < sizeA; ++i) {
@@ -63,9 +48,19 @@ int main(int argc, char** argv) {
 		InitArray(array1, curArraySize, numProc);
 		InitArray(array2, curArraySize, numProc);
 
+		int shift = 0;
+		long long sBuffer = 0;
+
 		double start, end;
 		start = MPI_Wtime();
-		s = CalcS(array1, array2, numProc, bufferSize, &status);
+		for (int i = 1; i < numProc; ++i) {
+			MPI_Send(array1 + shift, bufferSize, MPI_INT, i, ID, MPI_COMM_WORLD);
+			MPI_Send(array2, SIZE, MPI_INT, i, ID, MPI_COMM_WORLD);
+
+			MPI_Recv(&sBuffer, 1, MPI_LONG_LONG, i, ID, MPI_COMM_WORLD, &status);
+			s += sBuffer;
+			shift += bufferSize;
+		}
 		end = MPI_Wtime();
 
 		printf("S from parallels realisation: %lld\n", s);
