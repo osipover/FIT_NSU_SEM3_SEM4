@@ -1,61 +1,49 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#define SIZE 120000
+#define SIZE 100000
 
 void PrintArray(int* arr, int size) {
-	for (int i = 0; i < size; ++i) {
-		printf("%d ", arr[i]);
-	}
-	printf("\n"); 
+    for (int i = 0; i < size; ++i) {
+	printf("%d ", arr[i]);
+    }
+    printf("\n"); 
 }
 
-int* InitA(int size) {
-	int* arr = calloc(size, sizeof(int));
+int* InitArray(int size) {
+    int* arr = malloc(size * sizeof(int));
+    for (int i = 0; i < size; ++i) {
+	arr[i] = i;
+    }
 
-	srand(time(NULL));
-	for (int i = 0; i < size; ++i) {
-		arr[i] = rand() % 100;
-	}
-
-	return arr;
-}
-
-int* InitB(int size) {
-	int* arr = calloc(size, sizeof(int));
-
-	srand(time(NULL) + 1);
-	for (int i = 0; i < size; ++i) {
-		arr[i] = rand() % 100;
-	}
-
-	return arr;
+    return arr;
 }
 
 long long CalcS(int* a, int* b, int N) {
-	long long s = 0;
-	for (int i = 0; i < N; ++i) {
-		for (int j = 0; j < N; ++j) {
-			s += a[i] * b[j];
-		}
+    long long s = 0;
+    for (int i = 0; i < N; ++i) {
+	for (int j = 0; j < N; ++j) {
+		s += a[i] * b[j];
 	}
-	return s;
+    }
+    return s;
 }
 
 int main() {
-	int* a = InitA(SIZE);
-	int* b = InitB(SIZE);
-	
-	time_t start, end;
-	time(&start);
-	long long s = CalcS(a, b, SIZE);
-	time(&end);
+    time_t start, end;
 
-	printf("%lld\n", s);
-	printf("Time: %f sec\n", difftime(end, start));
+    int* a = InitArray(SIZE);
+    int* b = InitArray(SIZE);
 
-	free(a);
-	free(b);
+    time(&start);
+    long long s = CalcS(a, b, SIZE);
+    time(&end);
 
-	return 0;
+    printf("%lld\n", s);
+    printf("Time: %f sec\n", difftime(end, start));
+
+    free(a);
+    free(b);
+
+    return 0;
 }
