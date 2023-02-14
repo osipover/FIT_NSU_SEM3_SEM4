@@ -3,47 +3,38 @@
 #include <time.h>
 #define SIZE 100000
 
-void PrintArray(int* arr, int size) {
-    for (int i = 0; i < size; ++i) {
-	printf("%d ", arr[i]);
-    }
-    printf("\n"); 
-}
-
 int* InitArray(int size) {
     int* arr = malloc(size * sizeof(int));
     for (int i = 0; i < size; ++i) {
-	arr[i] = i;
+        arr[i] = i;
     }
-
     return arr;
 }
 
-long long CalcS(int* a, int* b, int N) {
+long long CalcS(int* array1, int* array2, int size) {
     long long s = 0;
-    for (int i = 0; i < N; ++i) {
-	for (int j = 0; j < N; ++j) {
-		s += a[i] * b[j];
-	}
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            s += array1[i] * array2[j];
+        }
     }
     return s;
 }
 
 int main() {
-    time_t start, end;
+    int* array1 = InitArray(SIZE);
+    int* array2 = InitArray(SIZE);
 
-    int* a = InitArray(SIZE);
-    int* b = InitArray(SIZE);
+    time_t startTime, endTime;
+    time(&startTime);
+    long long s = CalcS(array1, array2, SIZE);
+    time(&endTime);
 
-    time(&start);
-    long long s = CalcS(a, b, SIZE);
-    time(&end);
+    printf("S = %lld\n", s);
+    printf("Time: %f sec\n", difftime(endTime, startTime));
 
-    printf("%lld\n", s);
-    printf("Time: %f sec\n", difftime(end, start));
-
-    free(a);
-    free(b);
+    free(array1);
+    free(array2);
 
     return 0;
 }
