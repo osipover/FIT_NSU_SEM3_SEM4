@@ -37,7 +37,7 @@ void PrintResult(long long *s, float totalTime, int numProc) {
 	printf("S = %lld\n", *s);
 	printf("Total time: %f\n", totalTime);
 	printf("Sp = %f\n", boost);
-	printf("Ep = %f", efficiency);
+	printf("Ep = %f%\n", efficiency);
 }
 
 void FreeArrays(int* array1, int* array2) {
