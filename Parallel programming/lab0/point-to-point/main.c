@@ -4,6 +4,7 @@
 #include "mpi.h"
 #define SIZE 100000
 #define ID 1
+#define T1 38.0
 
 int CalcCurrentArraySize(int numProc) {
 	if (SIZE % (numProc - 1) == 0) {
@@ -20,14 +21,28 @@ void InitArray(int* arr, int curArraySize, int numProc) {
 	}
 }
 
-long long Mult(int* a, int sizeA, int* b, int sizeB) {
+long long Mult(int* array1, int sizeArray1, int* array2, int sizeArray2) {
 	long long result = 0;
-	for (int i = 0; i < sizeA; ++i) {
-		for (int j = 0; j < sizeB; ++j) {
-			result += a[i] * b[j];
+	for (int i = 0; i < sizeArray1; ++i) {
+		for (int j = 0; j < sizeArray2; ++j) {
+			result += array1[i] * array2[j];
 		}
 	}
 	return result;
+}
+
+void PrintResult(long long *s, float totalTime, int numProc) {
+	float boost = T1 / totalTime;
+	float efficiency = (boost / (float)numProc) * 100;
+	printf("S = %lld\n", *s);
+	printf("Total time: %f\n", totalTime);
+	printf("Sp = %f\n", boost);
+	printf("Ep = %f", efficiency);
+}
+
+void FreeArrays(int* array1, int* array2) {
+	free(array1);
+	free(array2);
 }
 
 int main(int argc, char** argv) {
@@ -38,8 +53,8 @@ int main(int argc, char** argv) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 	const int curArraySize = CalcCurrentArraySize(numProc);
-	int *array1 = malloc(curArraySize * sizeof(int));
-	int *array2 = malloc(curArraySize * sizeof(int));
+	int* array1 = malloc(curArraySize * sizeof(int));
+	int* array2 = malloc(curArraySize * sizeof(int));
 
 	long long s = 0;
 	const int bufferSize = curArraySize / (numProc - 1);
@@ -48,32 +63,31 @@ int main(int argc, char** argv) {
 		InitArray(array1, curArraySize, numProc);
 		InitArray(array2, curArraySize, numProc);
 
-		double start, end;
-		start = MPI_Wtime();
+		double startTime, endTime;
+		startTime = MPI_Wtime();
 		int shift = 0;
 		for (int i = 1; i < numProc; ++i) {
 			MPI_Send(array1 + shift, bufferSize, MPI_INT, i, ID, MPI_COMM_WORLD);
 			MPI_Send(array2, SIZE, MPI_INT, i, ID, MPI_COMM_WORLD);
 			shift += bufferSize;
 		}
-		long long sBuffer = 0;
+		long long stmp = 0;
 		for (int i = 1; i < numProc; ++i) {
-			MPI_Recv(&sBuffer, 1, MPI_LONG_LONG, MPI_ANY_SOURCE, ID, MPI_COMM_WORLD, &status);
-			s += sBuffer;
+			MPI_Recv(&stmp, 1, MPI_LONG_LONG, MPI_ANY_SOURCE, ID, MPI_COMM_WORLD, &status);
+			s += stmp;
 		}
-		end = MPI_Wtime();
+		endTime = MPI_Wtime();
+		
+		PrintResult(&s, endTime - startTime, numProc);
 
-		printf("S from parallels realisation: %lld\n", s);
-		printf("Total time: %f\n", end - start);
 	}
 	else {
 		MPI_Recv(array1, bufferSize, MPI_INT, 0, ID, MPI_COMM_WORLD, &status);
-		MPI_Recv(array2,	SIZE, MPI_INT, 0, ID, MPI_COMM_WORLD, &status);
+		MPI_Recv(array2, SIZE, MPI_INT, 0, ID, MPI_COMM_WORLD, &status);
 		s = Mult(array1, bufferSize, array2, SIZE);
 		MPI_Send(&s, 1, MPI_LONG_LONG, 0, ID, MPI_COMM_WORLD);
 	}
-	free(array1);
-	free(array2);
+	FreeArrays(array1, array2);
 	MPI_Finalize();
 	return 0;
 }
