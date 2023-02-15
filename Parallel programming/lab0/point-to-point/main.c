@@ -7,11 +7,11 @@
 #define T1 38.0
 
 int CalcCurrentArraySize(int numProc) {
-	if (SIZE % (numProc - 1) == 0) {
+	if (SIZE % numProc == 0) {
 		return SIZE;
 	}
 	else {
-		return SIZE + (numProc - 1) - (SIZE % (numProc - 1));
+		return SIZE + numProc - (SIZE % numProc);
 	}
 }
 
@@ -31,7 +31,7 @@ long long Mult(int* array1, int sizeArray1, int* array2, int sizeArray2) {
 	return result;
 }
 
-void PrintResult(long long *s, float totalTime, int numProc) {
+void PrintResult(long long* s, float totalTime, int numProc) {
 	float boost = T1 / totalTime;
 	float efficiency = (boost / (float)numProc) * 100;
 	printf("S = %lld\n", *s);
@@ -54,10 +54,10 @@ int main(int argc, char** argv) {
 
 	const int curArraySize = CalcCurrentArraySize(numProc);
 	int* array1 = malloc(curArraySize * sizeof(int));
-	int* array2 = malloc(curArraySize * sizeof(int));
+	int* array2 = malloc(curArraySize * sizeof(int));	
 
 	long long s = 0;
-	const int bufferSize = curArraySize / (numProc - 1);
+	const int bufferSize = curArraySize / numProc;
 
 	if (rank == 0) {
 		InitArray(array1, curArraySize, numProc);
@@ -65,21 +65,23 @@ int main(int argc, char** argv) {
 
 		double startTime, endTime;
 		startTime = MPI_Wtime();
-		int shift = 0;
+
+		int shift = bufferSize;
 		for (int i = 1; i < numProc; ++i) {
 			MPI_Send(array1 + shift, bufferSize, MPI_INT, i, ID, MPI_COMM_WORLD);
 			MPI_Send(array2, SIZE, MPI_INT, i, ID, MPI_COMM_WORLD);
 			shift += bufferSize;
 		}
+
+		s = Mult(array1, bufferSize, array2, SIZE);
 		long long stmp = 0;
 		for (int i = 1; i < numProc; ++i) {
 			MPI_Recv(&stmp, 1, MPI_LONG_LONG, MPI_ANY_SOURCE, ID, MPI_COMM_WORLD, &status);
 			s += stmp;
 		}
 		endTime = MPI_Wtime();
-		
-		PrintResult(&s, endTime - startTime, numProc);
 
+		PrintResult(&s, endTime - startTime, numProc);
 	}
 	else {
 		MPI_Recv(array1, bufferSize, MPI_INT, 0, ID, MPI_COMM_WORLD, &status);
