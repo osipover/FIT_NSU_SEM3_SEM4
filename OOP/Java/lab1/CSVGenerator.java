@@ -4,27 +4,29 @@ import java.io.Writer;
 import java.io.OutputStreamWriter;
 
 public class CSVGenerator {
+    private String fileName;
+    private FileOutputStream outputStream;
+
     public CSVGenerator(String fileName) throws IOException{
         try {
-            this.fileOut = new FileOutputStream(fileName);
+            this.fileName = fileName;
+            this.outputStream = new FileOutputStream(fileName);
         }
         catch (IOException ex){
-            throw new IOException("[ERROR] I can't open output file");
+            throw new IOException("[ERROR] I can't open " + this.fileName);
         }
     }
-
-    public void write(WordTable wordTable) {
+    public void write(WordTable wordTable) throws IOException{
         Writer writer = null;
-        writer = new OutputStreamWriter(this.fileOut);
+        writer = new OutputStreamWriter(outputStream);
         try{
-            for (WordStatistic cell : wordTable.sort()){
+            var sortedTable = wordTable.sort();
+            for (WordStatistic cell : sortedTable){
                 writer.write(cell.toString() + "\n");
             }
         }
         catch(IOException ex){
-            System.err.println("[ERROR] I can't write in output file");
+            throw new IOException("[ERROR] I can't write in " + this.fileName);
         }
     }
-
-    private final FileOutputStream fileOut;
 }
