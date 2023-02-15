@@ -4,12 +4,13 @@
 #include "mpi.h"
 #define SIZE 100000
 #define ID 1
+#define T1 38.0
 
 int CalcCurrentArraySize(int numProc) {
-	if (SIZE % (numProc) == 0) 
+	if (SIZE % (numProc) == 0)
 		return SIZE;
 	else
-		return SIZE + (numProc) - (SIZE % (numProc));
+		return SIZE + (numProc)-(SIZE % (numProc));
 }
 
 void InitArray(int* arr, int curArraySize) {
@@ -26,6 +27,15 @@ long long Mult(int* a, int sizeA, int* b, int sizeB) {
 		}
 	}
 	return result;
+}
+
+void PrintResult(long long* s, float totalTime, int numProc) {
+	float boost = T1 / totalTime;
+	float efficiency = (boost / (float)numProc) * 100;
+	printf("S = %lld\n", *s);
+	printf("Total time: %f sec\n", totalTime);
+	printf("Sp = %f\n", boost);
+	printf("Ep = %f%\n", efficiency);
 }
 
 void FreeArrays(int* array1, int* array2, int* recvBuffer) {
@@ -45,26 +55,25 @@ int main(int argc, char** argv) {
 	int* array1 = malloc(curArraySize * sizeof(int));
 	int* array2 = malloc(curArraySize * sizeof(int));
 
+	const int bufferSize = curArraySize / (numProc);
+	int* recvBuffer = malloc(bufferSize * sizeof(int));
+
 	double timeStart, timeEnd;
 	if (rank == 0) {
 		InitArray(array1, curArraySize);
 		InitArray(array2, curArraySize);
 		timeStart = MPI_Wtime();
 	}
-
-	long long s = 0, stmp = 0;	
-	const int bufferSize = curArraySize / (numProc);
-	int* recvBuffer = malloc(bufferSize * sizeof(int));
+	long long s = 0, stmp = 0;
 
 	MPI_Scatter(array1, bufferSize, MPI_INT, recvBuffer, bufferSize, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(array2, SIZE, MPI_INT, 0, MPI_COMM_WORLD);
 	stmp = Mult(recvBuffer, bufferSize, array2, SIZE);
 	MPI_Reduce(&stmp, &s, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-	
+
 	if (rank == 0) {
 		timeEnd = MPI_Wtime();
-		printf("S = %lld\n", s);
-		printf("Total time: %f sec\n", timeEnd - timeStart);
+		PrintResult(&s, timeEnd - timeStart, numProc);
 	}
 	FreeArrays(array1, array2, recvBuffer);
 	MPI_Finalize();
