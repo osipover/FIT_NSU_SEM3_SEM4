@@ -5,6 +5,13 @@
 #include <time.h>
 #define SIZE 2048
 
+void PrintResults(int totalTime, Matrix& E){
+	std::cout << "Time taken to find matrix I (inverted): " << totalTime << "sec\n";
+	std::cout << "E = A * I\n";
+	std::cout << "|E_1| = " << getA1(E) << std::endl;
+	std::cout << "|E_inf| = " << getAinf(E) << std::endl;
+}
+
 int main() {
 	std::ifstream input;
 	input.open("matrix.txt");
@@ -16,10 +23,7 @@ int main() {
 		Matrix I = A.invert(10);
 		time(&end);
 		Matrix E = A * I;
-		std::cout << "Time taken to find matrix I (inverted): " << difftime(end, start) << "sec\n";
-		std::cout << "E = A * I\n";
-		std::cout << "|E_1| = " << getA1(E) << std::endl;
-		std::cout << "|E_inf| = " << getAinf(E) << std::endl;
+		PrintResults(difftime(end, start), E);
 	}
 
 	return 0;
