@@ -1,0 +1,6 @@
+# This is my calculator
+DEFINE a 2
+DEFINE b 20
+PUSH a b
+*
+PRINT
