@@ -1,7 +1,0 @@
-# Calculator
-DEFINE a 2
-DEFINE b 25
-# Some comment
-PUSH a b
-+
-PRINT
