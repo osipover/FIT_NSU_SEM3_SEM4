@@ -1,6 +1,6 @@
 package com.commands;
 
-import com.commands.exceptions.NotEnoughStackException;
+import com.commands.exceptions.ArgumentsNumberException;
 import com.commands.exceptions.CommandException;
 import com.context.Context;
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ public class Addition implements Command {
             Double result = value1 + value2;
             context.push(result);
         } catch (EmptyStackException ex) {
-            throw new NotEnoughStackException("+");
+            throw new ArgumentsNumberException("+");
         }
     }
 }

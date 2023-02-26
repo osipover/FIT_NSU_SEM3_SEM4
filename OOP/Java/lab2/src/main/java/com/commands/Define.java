@@ -16,6 +16,7 @@ public class Define implements Command{
             throw new DefineException(ex.getMessage());
         }
     }
+
     private String parseDefinition(String str) throws IllegalArgumentException {
         try {
             Double.parseDouble(str);
@@ -24,6 +25,7 @@ public class Define implements Command{
             return str;
         }
     }
+
     private Double parseDouble(String str) throws IllegalArgumentException {
         try {
             return Double.parseDouble(str);

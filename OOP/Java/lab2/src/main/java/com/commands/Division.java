@@ -15,7 +15,7 @@ public class Division implements Command{
             Double result = value1 / value2;
             context.push(result);
         } catch (EmptyStackException ex) {
-            throw new NotEnoughStackException("/");
+            throw new ArgumentsNumberException("/");
         }
     }
 }

@@ -14,6 +14,5 @@ public class Print implements Command{
         } catch (EmptyStackException ex){
             throw new NotEnoughStackException("PRINT");
         }
-
     }
 }

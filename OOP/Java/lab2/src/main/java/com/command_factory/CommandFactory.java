@@ -23,7 +23,7 @@ public class CommandFactory {
         try {
             Class<?> clazz = Class.forName(properties.getProperty(cmdName));
             return (Command)clazz.newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
+        } catch (NullPointerException |ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
             throw new FindCommandException(cmdName);
         }
     }

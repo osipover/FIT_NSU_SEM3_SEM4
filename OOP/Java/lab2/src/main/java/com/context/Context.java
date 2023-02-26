@@ -6,12 +6,12 @@ import java.util.Stack;
 import java.util.Map;
 
 public class Context {
-        private Stack<Double> stack;
-        private Map<String, Double> defines;
+        private final Stack<Double> stack;
+        private final Map<String, Double> defines;
 
         public Context() {
-                this.defines = new HashMap<String, Double>();
-                this.stack = new Stack<Double>();
+                this.defines = new HashMap<>();
+                this.stack = new Stack<>();
         }
 
         public Double getValue(String definition) {
