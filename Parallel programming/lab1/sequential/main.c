@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 #define SIZE 1000
-#define EPSILON 0.00001
+#define EPSILON 0.0001
 
 void PrintVector(double* vector, int N) {
 	for (int i = 0; i < N; ++i) {
@@ -25,7 +25,7 @@ void PrintMatrix(double* matrix, int N) {
 double* InitPreSolution(int N) {
 	double* vector = (double*)malloc(N * sizeof(double));
 	for (int i = 0; i < N; ++i) {
-		vector[i] = rand();
+		vector[i] = 0.0;
 	}
 	return vector;
 }
@@ -40,6 +40,7 @@ void CopyMatrix(double* source, double* purpose, int size) {
 void MatrixMULT(double* A, double* B, double* C, int L, int M, int N) {
 	for (int i = 0; i < L; ++i) {
 		for (int j = 0; j < N; ++j) {
+			C[i * N + j] = 0;
 			for (int k = 0; k < M; ++k) {
 				C[i * N + j] += A[i * M + k] * B[k * N + j];
 			}
@@ -54,8 +55,8 @@ void MatrixSUB(double* A, double* B, double* C, int N) {
 }
 
 double* InitVectorR(double* A, double* x, double* b) {
-	double* r = (double*)calloc(SIZE, sizeof(double));
-	double* tmp = (double*)calloc(SIZE, sizeof(double));
+	double* r = (double*)malloc(SIZE * sizeof(double));
+	double* tmp = (double*)malloc(SIZE * sizeof(double));
 	MatrixMULT(A, x, tmp, SIZE, SIZE, 1);
 	MatrixSUB(b, tmp, r, SIZE);
 	free(tmp);
@@ -63,15 +64,15 @@ double* InitVectorR(double* A, double* x, double* b) {
 }
 
 double DotProduct(double* a, double* b) {
-	double dot = 0.0;
+	double dot = 0;
 	for (int i = 0; i < SIZE; ++i) {
-		dot += a[i] * b[i];
+		dot += (a[i] * b[i]);
 	}
 	return dot;
 }
 
 double Norm(double* vector) {
-	double norm = 0.0;
+	double norm = 0;
 	for (int i = 0; i < SIZE; ++i) {
 		norm += (vector[i] * vector[i]);
 	}
@@ -83,7 +84,7 @@ bool isSolutionReached(double* r, double* b) {
 }
 
 double CalcNextAlpha(double* A, double* r, double* z) {
-	double* tmp = (double*)calloc(SIZE, sizeof(double));
+	double* tmp = (double*)malloc(SIZE * sizeof(double));
 	MatrixMULT(A, z, tmp, SIZE, SIZE, 1);
 	double alpha = DotProduct(r, r) / DotProduct(tmp, z);
 	free(tmp);
@@ -107,14 +108,14 @@ void MatrixADD(double* A, double* B, double* C, int N) {
 }
 
 void CalcNextX(double* x, double* z, double alpha) {
-	double* tmp = (double*)calloc(SIZE, sizeof(double));
+	double* tmp = (double*)malloc(SIZE * sizeof(double));
 	ScalarMULT(alpha, z, tmp, SIZE);
 	MatrixADD(x, tmp, x, SIZE);
 	free(tmp);
 }
 
 void CalcNextR(double* A, double* r, double* z, double alpha, double* r_next) {
-	double* tmp = (double*)calloc(SIZE, sizeof(double));
+	double* tmp = (double*)malloc(SIZE * sizeof(double));
 	MatrixMULT(A, z, tmp, SIZE, SIZE, 1);
 	ScalarMULT(alpha, tmp, tmp, SIZE);
 	MatrixSUB(r, tmp, r_next, SIZE);
@@ -151,29 +152,26 @@ void ConjugateGradientMethod(double* A, double* x, double* b) {
 
 double* InitMatrixA(int N) {
 	double* A = (double*)malloc(N * N * sizeof(double));
-	
 	for (int i = 0; i < N; ++i) {
 		for (int j = 0; j < N; ++j) {
-			double value = (double)rand() / RAND_MAX;
-			value = round(value * 100) / 10;
+			double value = (double)rand()/RAND_MAX + (i == j ? (double)SIZE / 100 : 0);
 			A[i * N + j] = (i > j ? A[j * N + i] : value);
-			if (i == j) A[i * N + j] += SIZE;
-		}
+ 		}
 	}
-
 	return A;
 }
 
 double* InitVectorB(double* A, int N) {
 	double* b = (double*)malloc(N * sizeof(double));
 	for (int i = 0; i < N; ++i) {
-		b[i] = i + 1;
+		b[i] =  i + 1;
 	}
 	return b;
 }
 
 int main() {
 	double* A = InitMatrixA(SIZE);
+	PrintMatrix(A, SIZE);
 	double* x = InitPreSolution(SIZE);
 	double* b = InitVectorB(A, SIZE);
 
@@ -186,10 +184,10 @@ int main() {
 }
 
 
-	//double A[] = {
-	//	3, 5.6, 1.9,
-	//	5.6, 8.9, 4.8,
-	//	1.9, 4.8, 11.2
-	//};
-	//double x[] = { 0.0, 0.0, 0.0 };
-	//double b[] = { 1, 2, 3 };
+//double A[] = {
+//	3, 5.6, 1.9,
+//	5.6, 8.9, 4.8,
+//	1.9, 4.8, 11.2
+//};
+//double x[] = { 0.0, 0.0, 0.0 };
+//double b[] = { 1, 2, 3 };
