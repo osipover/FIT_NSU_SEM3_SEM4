@@ -1,10 +1,3 @@
-#include "mpi.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#define SIZE 1000
-#define EPSILON 0.0001
-
 void PrintVector(double* vector, int N) {
 	for (int i = 0; i < N; ++i) {
 		printf("%f ", vector[i]);
@@ -171,7 +164,7 @@ double* InitVectorB(double* A, int N) {
 
 int main() {
 	double* A = InitMatrixA(SIZE);
-	PrintMatrix(A, SIZE);
+	//PrintMatrix(A, SIZE);
 	double* x = InitPreSolution(SIZE);
 	double* b = InitVectorB(A, SIZE);
 
@@ -182,12 +175,3 @@ int main() {
 	free(x);
 	free(b);
 }
-
-
-//double A[] = {
-//	3, 5.6, 1.9,
-//	5.6, 8.9, 4.8,
-//	1.9, 4.8, 11.2
-//};
-//double x[] = { 0.0, 0.0, 0.0 };
-//double b[] = { 1, 2, 3 };
