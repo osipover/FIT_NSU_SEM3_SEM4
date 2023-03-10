@@ -9,7 +9,7 @@ typedef struct TProcess {
 	int rank;
 	double* Ap;
 	double* bp;
-	double* x0;
+	double* xp;
 	int numLinesOfAp;
 	int sizeOfAp;
 	int sizeOfBp;
@@ -19,7 +19,7 @@ typedef struct TProcess {
 
 void InitVectorX0(double* x0, int N) {
 	for (int i = 0; i < N; ++i) {
-		x0[i] = 1.0;
+		x0[i] = 0.0;
 	}
 }
 
@@ -32,8 +32,17 @@ void InitCurProccess(TProcess* curProc, int rank, int* numLinesA, int* numLinesB
 	curProc->offsetInB = offsetLinesB[rank];
 	curProc->Ap = (double*)malloc(numLinesA[rank] * sizeof(double));
 	curProc->bp = (double*)malloc(numLinesB[rank] * sizeof(double));
-	curProc->x0 = (double*)malloc(SIZE * sizeof(double));
-	InitVectorX0(curProc->x0, SIZE);
+	curProc->xp = (double*)malloc(numLinesB[rank] * sizeof(double));
+}
+
+void PrintMatrix(double* matrix, int size) {
+	for (int i = 0; i < size; ++i) {
+		for (int j = 0; j < size; ++j) {
+			printf("%f  ", matrix[i * size + j]);
+		}
+		printf("/n");
+	}
+	printf("/n");
 }
 
 void PrintVectorInt(int* vector, int size) {
@@ -52,16 +61,11 @@ void PrintVectorDouble(double* vector, int size) {
 
 void InitMatrixA(double* A, int N) {
 	for (int i = 0; i < N; ++i) {
-	for (int j = 0; j < N; ++j) {
-		A[i * N + j] = i * N + j + 1;
+		for (int j = 0; j < N; ++j) {
+			double value = (double)rand() / RAND_MAX + (i == j ? (double)SIZE / 100 : 0);
+			A[i * N + j] = (i > j ? A[j * N + i] : value);
 		}
-   }
-	//for (int i = 0; i < N; ++i) {
-	//	for (int j = 0; j < N; ++j) {
-	//		double value = (double)rand()/RAND_MAX + (i == j ? (double)SIZE / 100 : 0);
-	//		A[i * N + j] = (i > j ? A[j * N + i] : value);
- //		}
-	//}
+	}
 }
 
 void InitVectorB(double* b, int N) {
@@ -125,10 +129,10 @@ void MatrixSUB(double* A, double* B, double* C, int N) {
 	}
 }
 
-double* InitVectorRp(TProcess* curProc) {
+double* InitVectorRp(TProcess* curProc, double* x) {
 	double* rp = (double*)malloc(curProc->sizeOfBp * sizeof(double));
 	double* tmp = (double*)malloc((curProc->sizeOfAp / SIZE) * sizeof(double));
-	MatrixMULT(curProc->Ap, curProc->x0, tmp, curProc->numLinesOfAp, SIZE, 1);
+	MatrixMULT(curProc->Ap, x, tmp, curProc->numLinesOfAp, SIZE, 1);
 	MatrixSUB(curProc->bp, tmp, rp, curProc->sizeOfBp);
 	free(tmp);
 	return rp;
@@ -176,21 +180,73 @@ void CalcNextAlpha(double* alpha, double* rp, double* zp, TProcess* curProc) {
 	MPI_Allreduce(&dotTmp, &dotDenom, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
 	*alpha = dotNomin / dotDenom;
+	free(tmp);
 }
 
+void CalcNextBeta(double* beta, double* rp, double* rp_next, TProcess* curProc) {
+	double dotRpNext = DotProduct(rp_next, rp_next, curProc->sizeOfBp);
+	double dotRp = DotProduct(rp, rp, curProc->sizeOfBp);
 
-void ConjugateGradientMethod(TProcess* curProc) {
-	double* rp = InitVectorRp(curProc);
+	double dotNomin = 0.0;
+	double dotDenom = 0.0;
+
+	MPI_Allreduce(&dotRpNext, &dotNomin, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(&dotRp, &dotDenom, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+	*beta = dotNomin / dotDenom;
+}
+
+void MatrixADD(double* A, double* B, double* C, int N) {
+	for (int i = 0; i < N; ++i) {
+		C[i] = A[i] + B[i];
+	}
+}
+
+void ScalarMULT(double scalar, double* matrix, double* result, int N) {
+	for (int i = 0; i < N; ++i) {
+		result[i] = scalar * matrix[i];
+	}
+}
+
+void CalcNextXp(TProcess* curProc, double* zp, double alpha) {
+	double* tmp = (double*)malloc(curProc->sizeOfBp * sizeof(double));
+	ScalarMULT(alpha, zp, tmp, curProc->sizeOfBp);
+	MatrixADD(tmp, curProc->xp, curProc->xp, curProc->sizeOfBp);
+	free(tmp);
+}
+
+void CalcNextRp(TProcess* curProc, double* rp, double* zp, double alpha, double* rp_next) {
+	double* tmp = (double*)malloc(curProc->sizeOfBp * sizeof(double));
+	MatrixMULT(curProc->Ap, zp, tmp, curProc->numLinesOfAp, SIZE, 1);
+	ScalarMULT(alpha, tmp, tmp, curProc->sizeOfBp);
+	MatrixSUB(rp, tmp, rp_next, curProc->sizeOfBp);
+	free(tmp);
+}
+
+void CalcNextZp(TProcess* curProc, double* zp, double* rp_next, double beta) {
+	ScalarMULT(beta, zp, zp, curProc->sizeOfBp);
+	MatrixADD(rp_next, zp, zp, curProc->sizeOfBp);
+}
+
+void ConjugateGradientMethod(TProcess* curProc, double* x) {
+	double* rp = InitVectorRp(curProc, x);
+	double* rp_next = (double*)malloc(curProc->sizeOfBp * sizeof(double));
 	double* zp = (double*)malloc(curProc->sizeOfBp * sizeof(double));
 	CopyMatrix(rp, zp, curProc->sizeOfBp);
 
 	double alpha = 0.0;
 	double beta = 0.0;
 
-	while (!IsSolutionReached(rp, zp, curProc)) {
+	int count = 0;
+
+	while (!IsSolutionReached(rp, zp, curProc) && (count < 50000)) {
 		CalcNextAlpha(&alpha, rp, zp, curProc);
-
-
+		CalcNextXp(curProc, zp, alpha);
+		CalcNextRp(curProc, rp, zp, alpha, rp_next);
+		CalcNextBeta(&beta, rp, rp_next, curProc);
+		CalcNextZp(curProc, zp, rp_next, beta);
+		CopyMatrix(rp_next, rp, curProc->sizeOfBp);
+		++count;
 	}
 	//}
 }
@@ -222,11 +278,13 @@ int main(int argc, char** argv) {
 	double* A = (double*)malloc(SIZE * SIZE * sizeof(double));
 	double* b = (double*)malloc(SIZE * sizeof(double));
 	double* x = (double*)malloc(SIZE * sizeof(double));
+	InitVectorX0(x, SIZE);
 	//double* x0 = (double*)malloc(SIZE * sizeof(double));
 
 	if (rank == 0) {
 		InitMatrixA(A, SIZE);
 		InitVectorB(b, SIZE);	
+		PrintMatrix(A, SIZE);
 		//PrintVectorDouble(A, SIZE * SIZE);
 		//PrintVectorDouble(b, SIZE);
 	}
@@ -240,26 +298,24 @@ int main(int argc, char** argv) {
 
 	MPI_Scatterv(A, numLinesA, offsetLinesA, MPI_DOUBLE, curProc.Ap, numLinesA[rank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Scatterv(b, numLinesB, offsetLinesB, MPI_DOUBLE, curProc.bp, numLinesB[rank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Scatterv(x, numLinesB, offsetLinesB, MPI_DOUBLE, curProc.xp, numLinesB[rank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 	//printf("RANK: %d\n", rank);
 	//PrintVectorDouble(curProc.Ap, curProc.sizeOfAp);
 
-	ConjugateGradientMethod(&curProc);
+	ConjugateGradientMethod(&curProc, x);
+
+	MPI_Allgatherv(curProc.xp, curProc.sizeOfBp, MPI_DOUBLE, x, numLinesB, offsetLinesB, MPI_DOUBLE, MPI_COMM_WORLD);
+
+	if (rank == 0){
+		PrintVectorDouble(x, SIZE);
+	}
 
 	free(numLinesA);
 	free(offsetLinesA);
 	free(A);
-	free(curProc.x0);
+	free(x);
+	free(curProc.xp);
 	free(b);
 	free(curProc.Ap);
 }
-
-//C:\Users\osipo\OneDrive\Рабочий стол\NSU\2\ОПП\lab1\Debug
-
-//double A[] = {
-//	3, 5.6, 1.9,
-//	5.6, 8.9, 4.8,
-//	1.9, 4.8, 11.2
-//};
-//double x[] = { 0.0, 0.0, 0.0 };
-//double b[] = { 1, 2, 3 };
