@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#define SIZE 5
+#include <fstream>
+#define SIZE 1000
 #define EPSILON 0.0001
 
 typedef struct TProcess {
@@ -17,7 +18,7 @@ typedef struct TProcess {
 	int offsetInB;
 } TProcess;
 
-void InitVectorX0(double* x0, int N) {
+void InitPreSolution(double* x0, int N) {
 	for (int i = 0; i < N; ++i) {
 		x0[i] = 0.0;
 	}
@@ -40,9 +41,9 @@ void PrintMatrix(double* matrix, int size) {
 		for (int j = 0; j < size; ++j) {
 			printf("%f  ", matrix[i * size + j]);
 		}
-		printf("/n");
+		printf("\n");
 	}
-	printf("/n");
+	printf("\n");
 }
 
 void PrintVectorInt(int* vector, int size) {
@@ -70,11 +71,9 @@ void InitMatrixA(double* A, int N) {
 
 void InitVectorB(double* b, int N) {
 	for (int i = 0; i < N; ++i) {
-		b[i] =  i + 1;
+		b[i] = i + 1;
 	}
 }
-
-
 
 void SetMatrixParametrs(int* numLines, int* offsetLines, int numProc, int size) {
 	int offset = 0;
@@ -154,9 +153,9 @@ double FakeNorm(double* vector, int size) {
 	return fakeNorm;
 }
 
-bool IsSolutionReached(double* rp, double* bp, TProcess* curProc) {
+bool IsSolutionReached(double* rp, TProcess* curProc) {
 	double fakeNormRp = FakeNorm(rp, curProc->sizeOfBp);
-	double fakeNormBp = FakeNorm(bp, curProc->sizeOfBp);
+	static const double fakeNormBp = FakeNorm(curProc->bp, curProc->sizeOfBp);
 
 	double fakeNormR = 0.0;
 	double fakeNormB = 0.0;
@@ -164,13 +163,13 @@ bool IsSolutionReached(double* rp, double* bp, TProcess* curProc) {
 	MPI_Allreduce(&fakeNormRp, &fakeNormR, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	MPI_Allreduce(&fakeNormBp, &fakeNormB, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-	return (fakeNormR/fakeNormB) < (EPSILON * EPSILON);
+	return (fakeNormR / fakeNormB) < (EPSILON * EPSILON);
 }
 
-void CalcNextAlpha(double* alpha, double* rp, double* zp, TProcess* curProc) {
+void CalcNextAlpha(double* alpha, double* rp, double* z, double* zp, TProcess* curProc) {
 	double dotRp = DotProduct(rp, rp, curProc->sizeOfBp);
 	double* tmp = (double*)malloc(curProc->sizeOfBp * sizeof(double));
-	MatrixMULT(curProc->Ap, zp, tmp, curProc->numLinesOfAp, SIZE, 1);
+	MatrixMULT(curProc->Ap, z, tmp, curProc->numLinesOfAp, SIZE, 1);
 	double dotTmp = DotProduct(tmp, zp, curProc->sizeOfBp);
 
 	double dotNomin = 0.0;
@@ -215,9 +214,9 @@ void CalcNextXp(TProcess* curProc, double* zp, double alpha) {
 	free(tmp);
 }
 
-void CalcNextRp(TProcess* curProc, double* rp, double* zp, double alpha, double* rp_next) {
+void CalcNextRp(TProcess* curProc, double* rp, double* z, double* zp, double alpha, double* rp_next) {
 	double* tmp = (double*)malloc(curProc->sizeOfBp * sizeof(double));
-	MatrixMULT(curProc->Ap, zp, tmp, curProc->numLinesOfAp, SIZE, 1);
+	MatrixMULT(curProc->Ap, z, tmp, curProc->numLinesOfAp, SIZE, 1);
 	ScalarMULT(alpha, tmp, tmp, curProc->sizeOfBp);
 	MatrixSUB(rp, tmp, rp_next, curProc->sizeOfBp);
 	free(tmp);
@@ -228,10 +227,12 @@ void CalcNextZp(TProcess* curProc, double* zp, double* rp_next, double beta) {
 	MatrixADD(rp_next, zp, zp, curProc->sizeOfBp);
 }
 
-void ConjugateGradientMethod(TProcess* curProc, double* x) {
+void ConjugateGradientMethod(TProcess* curProc, double* x, int* numLinesB, int* offsetLinesB) {
 	double* rp = InitVectorRp(curProc, x);
 	double* rp_next = (double*)malloc(curProc->sizeOfBp * sizeof(double));
+	double* z = (double*)malloc(SIZE * sizeof(double));
 	double* zp = (double*)malloc(curProc->sizeOfBp * sizeof(double));
+
 	CopyMatrix(rp, zp, curProc->sizeOfBp);
 
 	double alpha = 0.0;
@@ -239,18 +240,20 @@ void ConjugateGradientMethod(TProcess* curProc, double* x) {
 
 	int count = 0;
 
-	while (!IsSolutionReached(rp, zp, curProc) && (count < 50000)) {
-		CalcNextAlpha(&alpha, rp, zp, curProc);
-		CalcNextXp(curProc, zp, alpha);
-		CalcNextRp(curProc, rp, zp, alpha, rp_next);
-		CalcNextBeta(&beta, rp, rp_next, curProc);
+	while (!IsSolutionReached(rp, curProc) && (count < 50000)) {
+		MPI_Allgatherv(zp, curProc->sizeOfBp, MPI_DOUBLE, z, numLinesB, offsetLinesB, MPI_DOUBLE, MPI_COMM_WORLD);
+		CalcNextAlpha(&alpha, rp, z, zp, curProc); 
+		CalcNextXp(curProc, zp, alpha); 
+		CalcNextRp(curProc, rp, z, zp, alpha, rp_next); 
+		CalcNextBeta(&beta, rp, rp_next, curProc); 
 		CalcNextZp(curProc, zp, rp_next, beta);
 		CopyMatrix(rp_next, rp, curProc->sizeOfBp);
 		++count;
 	}
-	//}
-}
 
+	printf("COUNT: %d\n", count);
+	MPI_Allgatherv(curProc->xp, curProc->sizeOfBp, MPI_DOUBLE, x, numLinesB, offsetLinesB, MPI_DOUBLE, MPI_COMM_WORLD);
+}
 
 
 void FreeMemory(int* numLines, int* offsetLines, double* A, double* x, double* b) {
@@ -273,43 +276,26 @@ int main(int argc, char** argv) {
 	int* numLinesB = CalcNumLines(numProc, SIZE, 1);
 	int* offsetLinesB = CalcOffsetLines(numLinesB, numProc);
 
-	PrintVectorInt(numLinesB, numProc);
-
 	double* A = (double*)malloc(SIZE * SIZE * sizeof(double));
 	double* b = (double*)malloc(SIZE * sizeof(double));
 	double* x = (double*)malloc(SIZE * sizeof(double));
-	InitVectorX0(x, SIZE);
-	//double* x0 = (double*)malloc(SIZE * sizeof(double));
+	InitPreSolution(x, SIZE);
 
 	if (rank == 0) {
 		InitMatrixA(A, SIZE);
-		InitVectorB(b, SIZE);	
-		PrintMatrix(A, SIZE);
-		//PrintVectorDouble(A, SIZE * SIZE);
-		//PrintVectorDouble(b, SIZE);
+		InitVectorB(b, SIZE);
+		//PrintMatrix(A, SIZE);
 	}
-
-
 
 	TProcess curProc;
 	InitCurProccess(&curProc, rank, numLinesA, numLinesB, offsetLinesA, offsetLinesB);
-	//double* Ap = (double*)malloc(numLinesA[rank] * sizeof(double));
-	//double* bp = (double*)malloc(numLinesB[rank] * sizeof(double));
 
 	MPI_Scatterv(A, numLinesA, offsetLinesA, MPI_DOUBLE, curProc.Ap, numLinesA[rank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Scatterv(b, numLinesB, offsetLinesB, MPI_DOUBLE, curProc.bp, numLinesB[rank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Scatterv(x, numLinesB, offsetLinesB, MPI_DOUBLE, curProc.xp, numLinesB[rank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-	//printf("RANK: %d\n", rank);
-	//PrintVectorDouble(curProc.Ap, curProc.sizeOfAp);
+	ConjugateGradientMethod(&curProc, x, numLinesB, offsetLinesB);
 
-	ConjugateGradientMethod(&curProc, x);
-
-	MPI_Allgatherv(curProc.xp, curProc.sizeOfBp, MPI_DOUBLE, x, numLinesB, offsetLinesB, MPI_DOUBLE, MPI_COMM_WORLD);
-
-	if (rank == 0){
-		PrintVectorDouble(x, SIZE);
-	}
 
 	free(numLinesA);
 	free(offsetLinesA);
@@ -318,4 +304,16 @@ int main(int argc, char** argv) {
 	free(curProc.xp);
 	free(b);
 	free(curProc.Ap);
+	MPI_Finalize();
 }
+
+//C:\Users\osipo\OneDrive\Рабочий стол\NSU\2\ОПП\lab1\Debug
+
+
+//double A[] = {
+//	3, 5.6, 1.9,
+//	5.6, 8.9, 4.8,
+//	1.9, 4.8, 11.2
+//};
+//double x[] = { 0.0, 0.0, 0.0 };
+//double b[] = { 1, 2, 3 };
