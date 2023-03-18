@@ -3,8 +3,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <fstream>
-#define SIZE 1000
-#define EPSILON 0.0001
+#define SIZE 1500
+#define EPSILON 0.00001
+#define T1 37.0
 
 typedef struct TProcess {
 	int rank;
@@ -61,12 +62,20 @@ void PrintVectorDouble(double* vector, int size) {
 }
 
 void InitMatrixA(double* A, int N) {
-	for (int i = 0; i < N; ++i) {
-		for (int j = 0; j < N; ++j) {
-			double value = (double)rand() / RAND_MAX + (i == j ? (double)SIZE / 100 : 0);
-			A[i * N + j] = (i > j ? A[j * N + i] : value);
-		}
+	std::ifstream file;
+	file.open("A.txt");
+
+	for (int i = 0; i < N * N; ++i) {
+		file >> A[i];
 	}
+
+	file.close();
+	//for (int i = 0; i < N; ++i) {
+	//	for (int j = 0; j < N; ++j) {
+	//		double value = (double)rand() / RAND_MAX + (i == j ? (double)SIZE / 100 : 0);
+	//		A[i * N + j] = (i > j ? A[j * N + i] : value);
+	//	}
+	//}
 }
 
 void InitVectorB(double* b, int N) {
@@ -168,14 +177,13 @@ bool IsSolutionReached(double* rp, TProcess* curProc) {
 
 void CalcNextAlpha(double* alpha, double* rp, double* z, double* zp, TProcess* curProc) {
 	double dotRp = DotProduct(rp, rp, curProc->sizeOfBp);
+	double dotNomin = 0.0;
+	MPI_Allreduce(&dotRp, &dotNomin, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
 	double* tmp = (double*)malloc(curProc->sizeOfBp * sizeof(double));
 	MatrixMULT(curProc->Ap, z, tmp, curProc->numLinesOfAp, SIZE, 1);
 	double dotTmp = DotProduct(tmp, zp, curProc->sizeOfBp);
-
-	double dotNomin = 0.0;
 	double dotDenom = 0.0;
-
-	MPI_Allreduce(&dotRp, &dotNomin, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	MPI_Allreduce(&dotTmp, &dotDenom, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
 	*alpha = dotNomin / dotDenom;
@@ -251,23 +259,41 @@ void ConjugateGradientMethod(TProcess* curProc, double* x, int* numLinesB, int* 
 		++count;
 	}
 
-	printf("COUNT: %d\n", count);
-	MPI_Allgatherv(curProc->xp, curProc->sizeOfBp, MPI_DOUBLE, x, numLinesB, offsetLinesB, MPI_DOUBLE, MPI_COMM_WORLD);
+	MPI_Gatherv(curProc->xp, curProc->sizeOfBp, MPI_DOUBLE, x, numLinesB, offsetLinesB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	if (curProc->rank == 0) {
+		printf("Number of iterations: %d\n", count);
+	}
+	//MPI_Allgatherv(curProc->xp, curProc->sizeOfBp, MPI_DOUBLE, x, numLinesB, offsetLinesB, MPI_DOUBLE, MPI_COMM_WORLD);
 }
 
 
-void FreeMemory(int* numLines, int* offsetLines, double* A, double* x, double* b) {
-	free(numLines);
-	free(offsetLines);
+void FreeMemory(double *A, double *b, double *x, int *numLinesA, int *offsetLinesA, int *numLinesB, int *offsetLinesB, TProcess *curProc) {
 	free(A);
 	free(x);
 	free(b);
+	free(numLinesA);
+	free(offsetLinesA);
+	free(numLinesB);
+	free(offsetLinesB);
+	free(curProc->Ap);
+	free(curProc->bp);
+	free(curProc->xp);
+}
+
+void PrintResult(float totalTime, int numProc) {
+	float boost = T1 / totalTime;
+	float efficiency = (boost / (float)numProc) * 100;
+	printf("Number of processes: %d\n", numProc);
+	printf("Total time: %f sec\n", totalTime);
+	printf("Sp = %f\n", boost);
+	printf("Ep = %f%\n", efficiency);
 }
 
 int main(int argc, char** argv) {
 	int numProc, rank;
 	MPI_Status status;
 	MPI_Init(&argc, &argv);
+	double startTime = MPI_Wtime();
 	MPI_Comm_size(MPI_COMM_WORLD, &numProc);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -284,7 +310,6 @@ int main(int argc, char** argv) {
 	if (rank == 0) {
 		InitMatrixA(A, SIZE);
 		InitVectorB(b, SIZE);
-		//PrintMatrix(A, SIZE);
 	}
 
 	TProcess curProc;
@@ -295,16 +320,16 @@ int main(int argc, char** argv) {
 	MPI_Scatterv(x, numLinesB, offsetLinesB, MPI_DOUBLE, curProc.xp, numLinesB[rank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 	ConjugateGradientMethod(&curProc, x, numLinesB, offsetLinesB);
+	double endTime = MPI_Wtime();
 
-
-	free(numLinesA);
-	free(offsetLinesA);
-	free(A);
-	free(x);
-	free(curProc.xp);
-	free(b);
-	free(curProc.Ap);
+	if (rank == 0) {
+		PrintResult(endTime - startTime, numProc);
+	}
+	
+	FreeMemory(A, b, x, numLinesA, offsetLinesA, numLinesB, offsetLinesB, &curProc);
 	MPI_Finalize();
+
+	return 0;
 }
 
 //C:\Users\osipo\OneDrive\Рабочий стол\NSU\2\ОПП\lab1\Debug
