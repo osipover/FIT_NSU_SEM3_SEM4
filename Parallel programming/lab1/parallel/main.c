@@ -40,15 +40,10 @@ void PrintVectorDouble(double* vector, int size) {
 void InitMatrixA(double* A, int N) {
 	std::ifstream file;
 	file.open("A.txt");
-
 	for (int i = 0; i < N * N; ++i) {
 		file >> A[i];
 	}
-
 	file.close();
-
-	printf("%f\n", A[0]);
-	printf("%f\n", A[N * N - 1]);
 }
 
 void InitVectorB(double* b, int N) {
@@ -222,9 +217,7 @@ void ConjugateGradientMethod(double* Ap, double* b, double* x, int* sizes, int* 
 	}
 
 	MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, x, sizes, offsets, MPI_DOUBLE, MPI_COMM_WORLD);
-	if (rank == 0) {
-		printf("Number of iterations: %d\n", count);
-	}
+	
 	free(tmp1);
 	free(tmp2);
 }
@@ -249,10 +242,12 @@ void PrintResult(float totalTime, int numProc) {
 }
 
 int main(int argc, char** argv) {
+	MPI_Init(&argc, &argv);
+	
+	double startTime = MPI_Wtime();
+	
 	int numProc, rank;
 	MPI_Status status;
-	MPI_Init(&argc, &argv);
-	double startTime = MPI_Wtime();
 	MPI_Comm_size(MPI_COMM_WORLD, &numProc);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
