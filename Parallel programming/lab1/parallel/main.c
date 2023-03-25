@@ -3,15 +3,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <fstream>
-#define SIZE 1200
-#define EPSILON 0.00001
-#define T1 38.0
 
-void InitPreSolution(double* x0, int N) {
-	for (int i = 0; i < N; ++i) {
-		x0[i] = 0.0;
-	}
-}
+#define SIZE 1500
+#define EPSILON 0.00001
+#define T1 106.0
 
 void PrintMatrix(double* matrix, int size) {
 	for (int i = 0; i < size; ++i) {
@@ -52,14 +47,9 @@ void InitVectorB(double* b, int N) {
 	}
 }
 
-void SetMatrixParametrs(int* numLines, int* offsetLines, int numProc, int size) {
-	int offset = 0;
-	for (int i = 0; i < numProc; ++i) {
-		numLines[i] = size / numProc;
-		if (i < size / numProc) ++numLines[i];
-		numLines[i] *= size;
-		offsetLines[i] = offset;
-		offset += numLines[i];
+void InitPreSolution(double* x, int N) {
+	for (int i = 0; i < N; ++i) {
+		x[i] = 0.0;
 	}
 }
 
@@ -72,6 +62,7 @@ int* CalcSizesOfAp(int numProc, int totalLines, int totalColumns) {
 	}
 	return sizes;
 }
+
 int* CalcOffsetsOfAp(const int* sizes, int numProc) {
 	int* offsets = (int*)malloc(numProc * sizeof(int));
 	int offset = 0;
@@ -92,7 +83,7 @@ void MatrixMULT(double* matrix, double* vector, double* result, int M, int N, in
 	for (int i = 0; i < M; ++i) {
 		result[i + begin] = 0;
 		for (int j = 0; j < N; ++j) {
-			result[i + begin] += matrix[i*N + j] * vector[j];
+			result[i + begin] += matrix[i * N + j] * vector[j];
 		}
 	}
 }
@@ -100,6 +91,18 @@ void MatrixMULT(double* matrix, double* vector, double* result, int M, int N, in
 void MatrixSUB(double* A, double* B, double* C, int N, int begin) {
 	for (int i = 0; i < N; ++i) {
 		C[i + begin] = A[i + begin] - B[i + begin];
+	}
+}
+
+void MatrixADD(double* A, double* B, double* C, int size, int begin) {
+	for (int i = 0; i < size; ++i) {
+		C[begin + i] = A[begin + i] + B[begin + i];
+	}
+}
+
+void ScalarMULT(double scalar, double* matrix, double* result, int size, int begin) {
+	for (int i = 0; i < size; ++i) {
+		result[begin + i] = scalar * matrix[begin + i];
 	}
 }
 
@@ -119,24 +122,7 @@ double FakeNorm(double* vector, int size, int begin) {
 	return fakeNorm;
 }
 
-double CalcFakeNormB(double *b, int *sizes, int *offsets, int rank) {
-	static const double fakeNormBp = FakeNorm(b, sizes[rank], offsets[rank]);
-	double fakeNormB = 0.0;
-	MPI_Allreduce(&fakeNormBp, &fakeNormB, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	return fakeNormB;
-}
-
-bool IsSolutionReached(double *b, double *r, int *sizes, int *offsets, int rank) {
-	double fakeNormRp = FakeNorm(r, sizes[rank], offsets[rank]);
-	double fakeNormR = 0.0;
-	MPI_Allreduce(&fakeNormRp, &fakeNormR, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-	static const double fakeNormB = CalcFakeNormB(b, sizes, offsets, rank);
-
-	return (fakeNormR / fakeNormB) < (EPSILON * EPSILON);
-}
-
-void CalcNextAlpha(double* alpha, double *Ap, double* r, double* z, double *dotNomin, int *sizes, int *offsets, int rank, double *tmp) {
+void CalcNextAlpha(double* alpha, double* Ap, double* r, double* z, double* dotNomin, int* sizes, int* offsets, int rank, double* tmp) {
 	double dotRp = DotProduct(r, r, sizes[rank], offsets[rank]);
 	MPI_Allreduce(&dotRp, dotNomin, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
@@ -148,45 +134,50 @@ void CalcNextAlpha(double* alpha, double *Ap, double* r, double* z, double *dotN
 	*alpha = (*dotNomin) / dotDenom;
 }
 
-void CalcNextBeta(double* beta, double* r, double *dotR, int *sizes, int *offsets, int rank) {
+void CalcNextBeta(double* beta, double* r, double* dotR, int* sizes, int* offsets, int rank) {
 	double tmp = DotProduct(r, r, sizes[rank], offsets[rank]);
 	double dotRnext = 0;
 	MPI_Allreduce(&tmp, &dotRnext, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	*beta = dotRnext / (*dotR);
 }
 
-void MatrixADD(double* A, double* B, double* C, int size, int begin) {
-	for (int i = 0; i < size; ++i) {
-		C[begin + i] = A[begin + i] + B[begin + i];
-	}
-}
-
-void ScalarMULT(double scalar, double* matrix, double* result, int size, int begin) {
-	for (int i = 0; i < size; ++i) {
-		result[begin + i] = scalar * matrix[begin + i];
-	}
-}
-
-void CalcNextXp(double *x, double* z, int *sizes, int *offsets, double alpha, int rank, double *tmp) {
-	ScalarMULT(alpha, z, tmp, sizes[rank], offsets[rank]);
-	MatrixADD(tmp, x, x, sizes[rank], offsets[rank]);
-}
-
-void CalcNextRp(double* r, double* z, double alpha, int *sizes, int *offsets, int rank, double *tmp1, double *tmp2) {
-	ScalarMULT(alpha, tmp1, tmp2, sizes[rank], offsets[rank]);
-	MatrixSUB(r, tmp2, r, sizes[rank], offsets[rank]);
-}
-
-void CalcNextZp(double *z, double *r, double beta, int *sizes, int *offsets, int rank) {
-	ScalarMULT(beta, z, z, sizes[rank], offsets[rank]);
-	MatrixADD(r, z, z, sizes[rank], offsets[rank]);
-}
-
-double* InitVectorR(double *Ap, double *b, double *x, double *tmp, int *sizes, int *offsets, int rank) {
+double* InitVectorR(double* Ap, double* b, double* x, double* tmp, int* sizes, int* offsets, int rank) {
 	double* r = (double*)malloc(SIZE * sizeof(double));
 	MatrixMULT(Ap, x, tmp, sizes[rank], SIZE, offsets[rank]);
 	MatrixSUB(b, tmp, r, sizes[rank], offsets[rank]);
 	return r;
+}
+
+void CalcNextXp(double* x, double* z, int* sizes, int* offsets, double alpha, int rank, double* tmp) {
+	ScalarMULT(alpha, z, tmp, sizes[rank], offsets[rank]);
+	MatrixADD(tmp, x, x, sizes[rank], offsets[rank]);
+}
+
+void CalcNextRp(double* r, double* z, double alpha, int* sizes, int* offsets, int rank, double* tmp1, double* tmp2) {
+	ScalarMULT(alpha, tmp1, tmp2, sizes[rank], offsets[rank]);
+	MatrixSUB(r, tmp2, r, sizes[rank], offsets[rank]);
+}
+
+void CalcNextZp(double* z, double* r, double beta, int* sizes, int* offsets, int rank) {
+	ScalarMULT(beta, z, z, sizes[rank], offsets[rank]);
+	MatrixADD(r, z, z, sizes[rank], offsets[rank]);
+}
+
+double CalcFakeNormB(double* b, int* sizes, int* offsets, int rank) {
+	static const double fakeNormBp = FakeNorm(b, sizes[rank], offsets[rank]);
+	double fakeNormB = 0.0;
+	MPI_Allreduce(&fakeNormBp, &fakeNormB, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	return fakeNormB;
+}
+
+bool IsSolutionReached(double* b, double* r, int* sizes, int* offsets, int rank) {
+	double fakeNormRp = FakeNorm(r, sizes[rank], offsets[rank]);
+	double fakeNormR = 0.0;
+	MPI_Allreduce(&fakeNormRp, &fakeNormR, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+	static const double fakeNormB = CalcFakeNormB(b, sizes, offsets, rank);
+
+	return (fakeNormR / fakeNormB) < (EPSILON * EPSILON);
 }
 
 void ConjugateGradientMethod(double* Ap, double* b, double* x, int* sizes, int* offsets, int rank) {
@@ -198,7 +189,6 @@ void ConjugateGradientMethod(double* Ap, double* b, double* x, int* sizes, int* 
 	double* z = (double*)malloc(SIZE * sizeof(double));
 	CopyMatrix(r, z, sizes[rank], offsets[rank]);
 
-	MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, r, sizes, offsets, MPI_DOUBLE, MPI_COMM_WORLD);
 	MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, z, sizes, offsets, MPI_DOUBLE, MPI_COMM_WORLD);
 
 	double alpha = 0.0;
@@ -207,23 +197,22 @@ void ConjugateGradientMethod(double* Ap, double* b, double* x, int* sizes, int* 
 	int count = 0;
 
 	while (!IsSolutionReached(b, r, sizes, offsets, rank) && (count < 50000)) {
-		CalcNextAlpha(&alpha, Ap, r, z, &dotR, sizes, offsets, rank, tmp1); 
-		CalcNextXp(x, z, sizes, offsets, alpha, rank, tmp2); 
+		CalcNextAlpha(&alpha, Ap, r, z, &dotR, sizes, offsets, rank, tmp1);
+		CalcNextXp(x, z, sizes, offsets, alpha, rank, tmp2);
 		CalcNextRp(r, z, alpha, sizes, offsets, rank, tmp1, tmp2);
-		CalcNextBeta(&beta, r, &dotR, sizes, offsets, rank); 
+		CalcNextBeta(&beta, r, &dotR, sizes, offsets, rank);
 		CalcNextZp(z, r, beta, sizes, offsets, rank);
 		MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, z, sizes, offsets, MPI_DOUBLE, MPI_COMM_WORLD);
 		++count;
 	}
 
 	MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, x, sizes, offsets, MPI_DOUBLE, MPI_COMM_WORLD);
-	
+
 	free(tmp1);
 	free(tmp2);
 }
 
-
-void FreeMemory(double *A, double *b, double *x, double *Ap, int *sizes, int *offsets) {
+void FreeMemory(double* A, double* b, double* x, double* Ap, int* sizes, int* offsets) {
 	free(A);
 	free(b);
 	free(x);
@@ -242,12 +231,13 @@ void PrintResult(float totalTime, int numProc) {
 }
 
 int main(int argc, char** argv) {
-	MPI_Init(&argc, &argv);
-	
-	double startTime = MPI_Wtime();
-	
 	int numProc, rank;
 	MPI_Status status;
+
+	MPI_Init(&argc, &argv);
+
+	double startTime = MPI_Wtime();
+
 	MPI_Comm_size(MPI_COMM_WORLD, &numProc);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -275,13 +265,14 @@ int main(int argc, char** argv) {
 	}
 
 	ConjugateGradientMethod(Ap, b, x, sizes, offsets, rank);
+
 	double endTime = MPI_Wtime();
 
 
 	if (rank == 0) {
 		PrintResult(endTime - startTime, numProc);
 	}
-	
+
 	FreeMemory(A, b, x, Ap, sizes, offsets);
 	MPI_Finalize();
 
