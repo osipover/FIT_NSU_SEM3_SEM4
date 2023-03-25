@@ -1,3 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <fstream>
+
+#define SIZE 1500
+#define EPSILON 0.00001
+
 void PrintVector(double* vector, int N) {
 	for (int i = 0; i < N; ++i) {
 		printf("%f ", vector[i]);
@@ -15,13 +23,6 @@ void PrintMatrix(double* matrix, int N) {
 	printf("\n");
 }
 
-double* InitPreSolution(int N) {
-	double* vector = (double*)malloc(N * sizeof(double));
-	for (int i = 0; i < N; ++i) {
-		vector[i] = 0.0;
-	}
-	return vector;
-}
 
 void CopyMatrix(double* source, double* purpose, int size) {
 	for (int i = 0; i < size; ++i) {
@@ -47,13 +48,16 @@ void MatrixSUB(double* A, double* B, double* C, int N) {
 	}
 }
 
-double* InitVectorR(double* A, double* x, double* b) {
-	double* r = (double*)malloc(SIZE * sizeof(double));
-	double* tmp = (double*)malloc(SIZE * sizeof(double));
-	MatrixMULT(A, x, tmp, SIZE, SIZE, 1);
-	MatrixSUB(b, tmp, r, SIZE);
-	free(tmp);
-	return r;
+void MatrixADD(double* A, double* B, double* C, int N) {
+	for (int i = 0; i < N; ++i) {
+		C[i] = A[i] + B[i];
+	}
+}
+
+void ScalarMULT(double scalar, double* matrix, double* result, int N) {
+	for (int i = 0; i < N; ++i) {
+		result[i] = scalar * matrix[i];
+	}
 }
 
 double DotProduct(double* a, double* b) {
@@ -72,32 +76,13 @@ double Norm(double* vector) {
 	return sqrt(norm);
 }
 
-bool isSolutionReached(double* r, double* b) {
-	return (Norm(r) / Norm(b)) < EPSILON;
-}
-
-double CalcNextAlpha(double* A, double* r, double* z) {
+double* InitVectorR(double* A, double* x, double* b) {
+	double* r = (double*)malloc(SIZE * sizeof(double));
 	double* tmp = (double*)malloc(SIZE * sizeof(double));
-	MatrixMULT(A, z, tmp, SIZE, SIZE, 1);
-	double alpha = DotProduct(r, r) / DotProduct(tmp, z);
+	MatrixMULT(A, x, tmp, SIZE, SIZE, 1);
+	MatrixSUB(b, tmp, r, SIZE);
 	free(tmp);
-	return alpha;
-}
-
-double CalcNextBeta(double* r_next, double* r) {
-	return DotProduct(r_next, r_next) / DotProduct(r, r);
-}
-
-void ScalarMULT(double scalar, double* matrix, double* result, int N) {
-	for (int i = 0; i < N; ++i) {
-		result[i] = scalar * matrix[i];
-	}
-}
-
-void MatrixADD(double* A, double* B, double* C, int N) {
-	for (int i = 0; i < N; ++i) {
-		C[i] = A[i] + B[i];
-	}
+	return r;
 }
 
 void CalcNextX(double* x, double* z, double alpha) {
@@ -120,6 +105,22 @@ void CalcNextZ(double beta, double* r_next, double* z) {
 	MatrixADD(r_next, z, z, SIZE);
 }
 
+double CalcNextAlpha(double* A, double* r, double* z) {
+	double* tmp = (double*)malloc(SIZE * sizeof(double));
+	MatrixMULT(A, z, tmp, SIZE, SIZE, 1);
+	double alpha = DotProduct(r, r) / DotProduct(tmp, z);
+	free(tmp);
+	return alpha;
+}
+
+double CalcNextBeta(double* r_next, double* r) {
+	return DotProduct(r_next, r_next) / DotProduct(r, r);
+}
+
+bool isSolutionReached(double* r, double* b) {
+	return (Norm(r) / Norm(b)) < EPSILON;
+}
+
 void ConjugateGradientMethod(double* A, double* x, double* b) {
 	double* r = InitVectorR(A, x, b);
 	double* r_next = (double*)malloc(SIZE * sizeof(double));
@@ -140,36 +141,70 @@ void ConjugateGradientMethod(double* A, double* x, double* b) {
 		CopyMatrix(r_next, r, SIZE);
 		++count;
 	}
-	printf("%d\n", count);
+	printf("Number of iterations: %d\n", count);
 }
 
 double* InitMatrixA(int N) {
+	std::ifstream file;
+	file.open("A.txt");
+
 	double* A = (double*)malloc(N * N * sizeof(double));
-	for (int i = 0; i < N; ++i) {
-		for (int j = 0; j < N; ++j) {
-			double value = (double)rand()/RAND_MAX + (i == j ? (double)SIZE / 100 : 0);
-			A[i * N + j] = (i > j ? A[j * N + i] : value);
- 		}
+	for (int i = 0; i < N * N; ++i) {
+		file >> A[i];
 	}
+
+	file.close();
 	return A;
 }
 
 double* InitVectorB(double* A, int N) {
 	double* b = (double*)malloc(N * sizeof(double));
 	for (int i = 0; i < N; ++i) {
-		b[i] =  i + 1;
+		b[i] = i + 1;
 	}
 	return b;
 }
 
+double* InitPreSolution(int N) {
+	double* x = (double*)malloc(N * sizeof(double));
+	for (int i = 0; i < N; ++i) {
+		x[i] = 0.0;
+	}
+	return x;
+}
+
+void GenerateMatrixA(int N) {
+	double* A = (double*)malloc(N * N * sizeof(double));
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			double value = (double)rand() / RAND_MAX + (i == j ? (double)SIZE / 100 : 0);
+			A[i * N + j] = (i > j ? A[j * N + i] : value);
+		}
+	}
+
+	std::ofstream fileIn;
+	fileIn.open("A.txt");
+	if (fileIn.is_open()) {
+		for (int i = 0; i < N * N; ++i) {
+			fileIn << A[i] << std::endl;
+		}
+		fileIn.close();
+	}
+}
+
+
 int main() {
+	GenerateMatrixA(SIZE);
+
+	time_t startTime, endTime;
+	time(&startTime);
 	double* A = InitMatrixA(SIZE);
-	//PrintMatrix(A, SIZE);
 	double* x = InitPreSolution(SIZE);
 	double* b = InitVectorB(A, SIZE);
-
 	ConjugateGradientMethod(A, x, b);
-	PrintVector(x, SIZE);
+	time(&endTime);
+
+	printf("Time: %f sec\n\n", difftime(endTime, startTime));
 
 	free(A);
 	free(x);
