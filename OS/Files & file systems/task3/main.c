@@ -20,14 +20,14 @@ int outputfile(char *path) {
 		fread(&buffer, 1, 1, file);
 		printf("%c", buffer);
 	}
+	
 	printf("\n\n");
-
+	fclose(file);
 	return 0;
 }
 
 void OutputMaps(char *pid) {
 	char path[256];
-  
 	if (!strcmp(pid, "self")) {
 		sprintf(path, "/proc/self/maps");
 	} else {
@@ -41,15 +41,13 @@ void OutputMaps(char *pid) {
 
 unsigned long GetVirtualAddress() {
 	char virtAdd[256];
-	printf("Enter virtual address:\n0x");
+	printf("Enter virtual address:\n");
 	assert(scanf("%s", virtAdd) == 1);
-
 	return strtol(virtAdd, 0, 16);
 }
 
-void OutputPagemapInfo(char *pid, uint64_t virtAdd) {
+void OutputPagemapInfo(char *pid, uint64_t startVirtAdd, uint64_t endVirtAdd) {
 	char path[256];
-  
         if (!strcmp(pid, "self")) {
                 sprintf(path, "/proc/self/pagemap");
         } else {
@@ -61,16 +59,19 @@ void OutputPagemapInfo(char *pid, uint64_t virtAdd) {
 		printf("Error: unable to open \"%s\"\n", path);
 		return;
 	}
-  
-	uint64_t offset = virtAdd / getpagesize() * 8;
-  
+
+	uint64_t offsetStart = startVirtAdd / getpagesize() * 8;
+	uint64_t offsetEnd = endVirtAdd / getpagesize() * 8;
+	uint64_t numPages = offsetEnd - offsetStart;
+
 	uint64_t bufferData = 0;
+	fseek(pagemap, offsetStart, SEEK_SET);
+	for (int i = 0; i < numPages; ++i) {
+		fread(&bufferData, 8, 1, pagemap);
+		printf("PFN: 0x%llx\n", (unsigned long long)GET_PFN(bufferData));
+	}
 
-	fseek(pagemap, offset, SEEK_SET);
- 	fread(&bufferData, 8, 1, pagemap);
-
-	printf("Data: 0x%llx\n", (unsigned long long)bufferData);
-	printf("PFN: 0x%llx\n", (unsigned long long)GET_PFN(bufferData));
+	fclose(pagemap);
 }
 
 int main(int argc, char **argv) {
@@ -79,9 +80,13 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	char *pid = argv[1];  
+	char *pid = argv[1];
+	
 	OutputMaps(pid);
-	uint64_t virtAdd = GetVirtualAddress();
-	OutputPagemapInfo(pid, virtAdd);
+
+	uint64_t startVirtAdd = GetVirtualAddress();
+	uint64_t endVirtAdd = GetVirtualAddress();
+
+	OutputPagemapInfo(pid, startVirtAdd, endVirtAdd);
 }
 
