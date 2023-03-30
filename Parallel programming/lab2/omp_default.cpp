@@ -4,8 +4,9 @@
 #include <math.h>
 #include <fstream>
 
-#define SIZE 1000
+#define SIZE 1500
 #define EPSILON 0.00001
+#define T1 60.8
 
 void PrintVector(double* vector, int N) {
 	for (int i = 0; i < N; ++i) {
@@ -26,7 +27,7 @@ void PrintMatrix(double* matrix, int N) {
 
 
 void CopyMatrix(double* source, double* purpose, int size) {
-#pragma omp for
+#pragma omp for 
 	for (int i = 0; i < size; ++i) {
 		purpose[i] = source[i];
 	}
@@ -46,21 +47,21 @@ void MatrixMULT(double* A, double* B, double* C, int L, int M, int N) {
 }
 
 void MatrixSUB(double* A, double* B, double* C, int N) {
-#pragma omp for
+#pragma omp for 
 	for (int i = 0; i < N; ++i) {
 		C[i] = A[i] - B[i];
 	}
 }
 
 void MatrixADD(double* A, double* B, double* C, int N) {
-#pragma omp for
+#pragma omp for 
 	for (int i = 0; i < N; ++i) {
 		C[i] = A[i] + B[i];
 	}
 }
 
 void ScalarMULT(double scalar, double* matrix, double* result, int N) {
-#pragma omp for
+#pragma omp for 
 	for (int i = 0; i < N; ++i) {
 		result[i] = scalar * matrix[i];
 	}
@@ -69,7 +70,7 @@ void ScalarMULT(double scalar, double* matrix, double* result, int N) {
 void DotProduct(double* a, double* b, double* dot) {
 #pragma omp single
 	*dot = 0.0;
-#pragma omp for reduction (+:dot[0])
+#pragma omp for reduction(+:dot[:1]) 
 	for (int k = 0; k < SIZE; ++k) {
 		dot[0] += (a[k] * b[k]);
 	}
@@ -78,7 +79,7 @@ void DotProduct(double* a, double* b, double* dot) {
 void Norm(double* vector, double* norm) {
 #pragma omp single
 	*norm = 0.0;
-#pragma omp for reduction(+:norm[0])
+#pragma omp for reduction(+:norm[:1])
 	for (int k = 0; k < SIZE; ++k) {
 		norm[0] += (vector[k] * vector[k]);
 	}
@@ -210,13 +211,21 @@ void GenerateMatrixA(int N) {
 	}
 }
 
+void PrintResult(int numThreads, double totalTime) {
+	float boost = T1 / totalTime;
+	float efficiency = (boost / (float)numThreads) * 100;
+
+	printf("Number of threads: %d\n", numThreads);
+	printf("Total time: %f sec\n", totalTime);
+	printf("Boost: %f\n", boost);
+	printf("Efficiency: %f %\n\n", efficiency);
+}
+
 
 int main(int argc, char** argv) {
 	int numThreads = (argc > 1 ? atoi(argv[1]) : 1);
 
-	time_t startTime, endTime;
-
-	time(&startTime);
+	double startTime = omp_get_wtime();
 
 	double* A = InitMatrixA(SIZE);
 	double* x = InitPreSolution(SIZE);
@@ -224,9 +233,9 @@ int main(int argc, char** argv) {
 
 	ConjugateGradientMethod(A, x, b, numThreads);
 
-	time(&endTime);
+	double endTime = omp_get_wtime();
 
-	printf("Time: %f sec\n\n", difftime(endTime, startTime));
+	PrintResult(numThreads, endTime - startTime);
 
 	free(A);
 	free(x);
