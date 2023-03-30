@@ -5,7 +5,6 @@
 #include <assert.h>
 #include <stdint.h>
 
-#define GET_BIT(X, Y) ((X >> Y) & 1)
 #define GET_PFN(DATA) (DATA & (((uint64_t)1 << 54) - 1))
 
 int outputfile(char *path) {
