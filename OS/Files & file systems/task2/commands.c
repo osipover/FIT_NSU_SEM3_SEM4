@@ -177,21 +177,40 @@ int removehardlink(int argc, char **argv) {
 	return removefile(argc, argv);
 }
 
+char* GetPermissions(struct stat *filestat) {
+	char *permissions = (char *)malloc(10);
+
+	permissions[0] = (filestat->st_mode & S_IRUSR ? 'r' : '-');
+	permissions[1] = (filestat->st_mode & S_IWUSR ? 'w' : '-');
+	permissions[2] = (filestat->st_mode & S_IXUSR ? 'x' : '-');
+	permissions[3] = (filestat->st_mode & S_IRGRP ? 'r' : '-');
+	permissions[4] = (filestat->st_mode & S_IWGRP ? 'w' : '-');
+	permissions[5] = (filestat->st_mode & S_IXUSR ? 'x' : '-');
+	permissions[6] = (filestat->st_mode & S_IROTH ? 'r' : '-');
+	permissions[7] = (filestat->st_mode & S_IWOTH ? 'w' : '-');
+	permissions[8] = (filestat->st_mode & S_IXOTH ? 'x' : '-');
+	permissions[9] = (filestat->st_mode & S_ISVTX ? 't' : ' ');
+
+	return permissions;
+}
+
 int outputdata(int argc, char **argv) {
         if (argc != 2) {
                 printf("Error: incorrect number of arguments\n");
                 return ARG_ERROR;
         }
-  
+	
 	struct stat filestat;
 	if (stat(argv[1], &filestat) == -1) {
 		printf("Error: unable to get status of \"%s\"\n", argv[1]);
 		return SYSCALL_ERROR;
 	}
 
-	printf("Permission: %d\n", filestat.st_mode & 0777);
+	char *permissions = GetPermissions(&filestat);
+	printf("Permissions: %s\n", permissions);
 	printf("Number of hard links: %ld\n", filestat.st_nlink);
 
+	free(permissions);
 	return SUCCESS;
 }
 
