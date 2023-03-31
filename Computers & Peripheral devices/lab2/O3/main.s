@@ -34,7 +34,7 @@ TestClockGettime:
         movq    %rdi, %rbx			        //N: %rbx
         movl    $4, %edi
         subq    $48, %rsp
-        leaq    16(%rsp), %rsi		                 //start: 16(%rsp)
+        leaq    16(%rsp), %rsi		                //start: 16(%rsp)
         call    clock_gettime
         testq   %rbx, %rbx			
         jle     .L10				        //если N==1, то переходим в .L10
