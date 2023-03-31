@@ -70,7 +70,7 @@ void ScalarMULT(double scalar, double* matrix, double* result, int N) {
 void DotProduct(double* a, double* b, double* dot) {
 #pragma omp single
 	*dot = 0.0;
-#pragma omp for reduction(+:dot[:1]) 
+#pragma omp for reduction(+:dot[0]) 
 	for (int k = 0; k < SIZE; ++k) {
 		dot[0] += (a[k] * b[k]);
 	}
@@ -79,7 +79,7 @@ void DotProduct(double* a, double* b, double* dot) {
 void Norm(double* vector, double* norm) {
 #pragma omp single
 	*norm = 0.0;
-#pragma omp for reduction(+:norm[:1])
+#pragma omp for reduction(+:norm[0])
 	for (int k = 0; k < SIZE; ++k) {
 		norm[0] += (vector[k] * vector[k]);
 	}
