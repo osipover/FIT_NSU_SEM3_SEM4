@@ -192,12 +192,10 @@ int main() {
 
 	time_t startTime, endTime;
 	time(&startTime);
-
 	double* A = InitMatrixA(SIZE);
 	double* x = InitPreSolution(SIZE);
 	double* b = InitVectorB(A, SIZE);
 	ConjugateGradientMethod(A, x, b);
-	
 	time(&endTime);
 
 	printf("Time: %f sec\n\n", difftime(endTime, startTime));
