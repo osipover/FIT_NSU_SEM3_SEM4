@@ -3,7 +3,7 @@
 #include <math.h>
 #include <fstream>
 
-#define SIZE 1500
+#define SIZE 2000
 #define EPSILON 0.00001
 
 void PrintVector(double* vector, int N) {
@@ -22,7 +22,6 @@ void PrintMatrix(double* matrix, int N) {
 	}
 	printf("\n");
 }
-
 
 void CopyMatrix(double* source, double* purpose, int size) {
 	for (int i = 0; i < size; ++i) {
@@ -76,28 +75,22 @@ double Norm(double* vector) {
 	return sqrt(norm);
 }
 
-double* InitVectorR(double* A, double* x, double* b) {
+double* InitVectorR(double* A, double* x, double* b, double* tmp) {
 	double* r = (double*)malloc(SIZE * sizeof(double));
-	double* tmp = (double*)malloc(SIZE * sizeof(double));
 	MatrixMULT(A, x, tmp, SIZE, SIZE, 1);
 	MatrixSUB(b, tmp, r, SIZE);
-	free(tmp);
 	return r;
 }
 
-void CalcNextX(double* x, double* z, double alpha) {
-	double* tmp = (double*)malloc(SIZE * sizeof(double));
+void CalcNextX(double* x, double* z, double alpha, double* tmp) {
 	ScalarMULT(alpha, z, tmp, SIZE);
 	MatrixADD(x, tmp, x, SIZE);
-	free(tmp);
 }
 
-void CalcNextR(double* A, double* r, double* z, double alpha, double* r_next) {
-	double* tmp = (double*)malloc(SIZE * sizeof(double));
+void CalcNextR(double* A, double* r, double* z, double alpha, double* r_next, double* tmp) {
 	MatrixMULT(A, z, tmp, SIZE, SIZE, 1);
 	ScalarMULT(alpha, tmp, tmp, SIZE);
 	MatrixSUB(r, tmp, r_next, SIZE);
-	free(tmp);
 }
 
 void CalcNextZ(double beta, double* r_next, double* z) {
@@ -105,11 +98,9 @@ void CalcNextZ(double beta, double* r_next, double* z) {
 	MatrixADD(r_next, z, z, SIZE);
 }
 
-double CalcNextAlpha(double* A, double* r, double* z) {
-	double* tmp = (double*)malloc(SIZE * sizeof(double));
+double CalcNextAlpha(double* A, double* r, double* z, double* tmp) {
 	MatrixMULT(A, z, tmp, SIZE, SIZE, 1);
 	double alpha = DotProduct(r, r) / DotProduct(tmp, z);
-	free(tmp);
 	return alpha;
 }
 
@@ -122,9 +113,12 @@ bool isSolutionReached(double* r, double* b) {
 }
 
 void ConjugateGradientMethod(double* A, double* x, double* b) {
-	double* r = InitVectorR(A, x, b);
+	double* tmp = (double*)malloc(SIZE * sizeof(double));
+
+	double* r = InitVectorR(A, x, b, tmp);
 	double* r_next = (double*)malloc(SIZE * sizeof(double));
 	double* z = (double*)malloc(SIZE * sizeof(double));
+
 	CopyMatrix(r, z, SIZE);
 
 	double alpha = 0.0;
@@ -133,9 +127,9 @@ void ConjugateGradientMethod(double* A, double* x, double* b) {
 	int count = 0;
 
 	while (!isSolutionReached(r, b) && (count < 50000)) {
-		alpha = CalcNextAlpha(A, r, z);
-		CalcNextX(x, z, alpha);
-		CalcNextR(A, r, z, alpha, r_next);
+		alpha = CalcNextAlpha(A, r, z, tmp);
+		CalcNextX(x, z, alpha, tmp);
+		CalcNextR(A, r, z, alpha, r_next, tmp);
 		beta = CalcNextBeta(r_next, r);
 		CalcNextZ(beta, r_next, z);
 		CopyMatrix(r_next, r, SIZE);
@@ -198,10 +192,12 @@ int main() {
 
 	time_t startTime, endTime;
 	time(&startTime);
+
 	double* A = InitMatrixA(SIZE);
 	double* x = InitPreSolution(SIZE);
 	double* b = InitVectorB(A, SIZE);
 	ConjugateGradientMethod(A, x, b);
+	
 	time(&endTime);
 
 	printf("Time: %f sec\n\n", difftime(endTime, startTime));
