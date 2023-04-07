@@ -4,7 +4,7 @@
 #include <math.h>
 #include <fstream>
 
-#define SIZE 1500
+#define SIZE 2000
 #define EPSILON 0.00001
 #define T1 106.0
 
