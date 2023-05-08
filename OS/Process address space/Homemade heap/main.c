@@ -13,6 +13,6 @@ int main() {
     myfree(p1);
     print_heap();
 
-    myfree(p2);
+    myfree(p2 + 5);
     print_heap();
 }
