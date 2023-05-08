@@ -1,11 +1,11 @@
 #include <stdio.h>
 
-int* get_pointer_v1() { /* */
+int* get_pointer_v1() { 
     int a = 10;
     return &a;
 }
 
-int* get_pointer_v2() { /* */
+int* get_pointer_v2() { 
     int a = 10;
     int *pa = &a;
     return pa;
