@@ -5,7 +5,6 @@ import network.packet.Packet;
 import org.apache.log4j.Logger;
 import server.limited_queue.LimitedQueue;
 import server.server_config.ServerConfig;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -83,6 +82,7 @@ public class ChatServer {
     }
 
     public void sendOfflineNotification(Connection offlineConnection) {
+        log.info(offlineConnection.getUsername() + " is offline");
         for (Connection connection : connections) {
             if (connection != offlineConnection) {
                 connection.sendPacket(new Packet(Packet.MSG, offlineConnection.getUsername(), " is offline"));
@@ -93,12 +93,4 @@ public class ChatServer {
     public ServerConfig getConfig() {
         return config;
     }
-
-
-//    public void sendUsersList(Connection connection) {
-//        ArrayList<String> usersList = new ArrayList<>();
-//        for (Connection connect : connections) {
-//            usersList.add(connect.getUsername());
-//        }
-//    }
 }
